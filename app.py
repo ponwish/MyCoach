@@ -242,17 +242,12 @@ def set_profile():
 @app.route('/healthz', methods=['GET'])
 def healthz():
     try:
+        # 最小限のクエリで data の有無だけを確認
         res = supabase.table('chat_history') \
             .select('id') \
             .limit(1) \
             .execute()
-        # エラーがあればエラー内容を返す
-        if res.error:
-            return jsonify({
-                'db': 'error',
-                'message': str(res.error)
-            }), 500
-        # 正常: レコード件数だけ返す
+        # data が取得できていれば OK、とみなす
         return jsonify({
             'db': 'ok',
             'count': len(res.data or [])
