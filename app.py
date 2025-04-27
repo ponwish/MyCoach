@@ -3,12 +3,15 @@ from flask_cors import CORS
 from openai import OpenAI
 import json
 import os
+import requests
+import uuid
+from datetime import datetime
 
 app = Flask(__name__)
 # 本番用のセッションCookie設定（SameSite=None + Secure属性）
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',  # ←ここ注意！None（文字列！）
-    SESSION_COOKIE_SECURE=True,      # ←必ずTrue（https限定）
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=True,
 )
 
 app.secret_key = os.getenv("SECRET_KEY", "your_default_secret_key")
@@ -20,14 +23,21 @@ CORS(
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Supabase設定
+SUPABASE_URL = "https://kyxneqqadoyqxsmohbop.supabase.co"
+SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5eG5lcXFhZG95cXhzbW9oYm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3NjMxNTgsImV4cCI6MjA2MTMzOTE1OH0.g6TmCxkj5iYkrntgBWVNM1RbWjWSr4Owyz7jn_q3dYM"
+
+# JSONファイルパス（会話履歴だけファイルに残す想定）
 GOALS_FILE = "goals.json"
 CONVERSATIONS_FILE = "conversations.json"
-PROFILE_FILE = "profile.json"
 
-# Admin認証情報（仮ハードコーディング）
+# Admin認証情報
 ADMIN_ID = "admin"
 ADMIN_PASSWORD = "password1234"
 
+# ------------------------------
+# Utility関数
+# ------------------------------
 def load_json(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
@@ -38,6 +48,44 @@ def load_json(file_path):
 def save_json(file_path, data):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+def save_profile_to_supabase(profile_data):
+    url = f"{SUPABASE_URL}/rest/v1/profiles"
+    headers = {
+        "apikey": SUPABASE_API_KEY,
+        "Authorization": f"Bearer {SUPABASE_API_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    payload = {
+        "id": str(uuid.uuid4()),
+        "age": profile_data.get("age", ""),
+        "gender": profile_data.get("gender", ""),
+        "job": profile_data.get("job", ""),
+        "background": profile_data.get("background", ""),
+        "certifications": profile_data.get("certifications", ""),
+        "vision": profile_data.get("vision", ""),
+        "created_at": datetime.utcnow().isoformat()
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    return response
+
+def fetch_profile_from_supabase():
+    url = f"{SUPABASE_URL}/rest/v1/profiles?select=*"
+    headers = {
+        "apikey": SUPABASE_API_KEY,
+        "Authorization": f"Bearer {SUPABASE_API_KEY}",
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        profiles = response.json()
+        if profiles:
+            # 最新登録のプロファイルを取る（本当はuser_id紐づけたいけど今は1件だけだから）
+            return profiles[-1]
+        else:
+            return {}
+    else:
+        return {}
 
 # ------------------------------
 # Mini Appユーザー向けAPI
@@ -87,46 +135,38 @@ def handle_talk():
         if not user_message:
             return jsonify({'message': 'メッセージが入力されていません'}), 400
 
-        # 目標取得
         goals_data = load_json(GOALS_FILE)
         user_goal = goals_data.get(user_id, '')
 
-        # 会話履歴取得
         conv_data = load_json(CONVERSATIONS_FILE)
         user_history = conv_data.get(user_id, [])
 
-        # コーチプロファイル取得
-        profile_data = load_json(PROFILE_FILE)
+        # コーチプロファイル取得（Supabaseから！）
+        profile_data = fetch_profile_from_supabase()
+
         profile_text = (
-            f"年齢: {profile_data.get('age', '')}歳, "
-            f"性別: {profile_data.get('gender', '')}, "
-            f"職業: {profile_data.get('job', '')}, "
-            f"経歴: {profile_data.get('background', '')}, "
-            f"資格: {profile_data.get('certifications', '')}, "
-            f"ビジョン: {profile_data.get('vision', '')}"
+            f\"年齢: {profile_data.get('age', '')}歳, \"
+            f\"性別: {profile_data.get('gender', '')}, \"
+            f\"職業: {profile_data.get('job', '')}, \"
+            f\"経歴: {profile_data.get('background', '')}, \"
+            f\"資格: {profile_data.get('certifications', '')}, \"
+            f\"ビジョン: {profile_data.get('vision', '')}\"
         )
 
-        system_message = f"""あなたは以下の人物になりきって、クライアントにコーチングを行ってください。
+        system_message = f\"\"\"あなたは以下の人物になりきって、クライアントにコーチングを行ってください。\n\n{profile_text}\n\nクライアントの目標は「{user_goal}」です。\n過去の会話履歴も踏まえて、前向きで具体的なアドバイスを1つだけ提案してください。\n\"\"\"
 
-{profile_text}
-
-クライアントの目標は「{user_goal}」です。
-過去の会話履歴も踏まえて、前向きで具体的なアドバイスを1つだけ提案してください。
-"""
-
-        messages = [{"role": "system", "content": system_message}] + user_history + [{"role": "user", "content": user_message}]
+        messages = [{\"role\": \"system\", \"content\": system_message}] + user_history + [{\"role\": \"user\", \"content\": user_message}]
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=\"gpt-4o\",
             messages=messages,
             temperature=0.7,
         )
 
         assistant_message = response.choices[0].message.content.strip()
 
-        # 履歴追加
-        user_history.append({"role": "user", "content": user_message})
-        user_history.append({"role": "assistant", "content": assistant_message})
+        user_history.append({\"role\": \"user\", \"content\": user_message})
+        user_history.append({\"role\": \"assistant\", \"content\": assistant_message})
 
         conv_data[user_id] = user_history
         save_json(CONVERSATIONS_FILE, conv_data)
@@ -134,8 +174,9 @@ def handle_talk():
         return jsonify({'message': assistant_message})
 
     except Exception as e:
-        print(f"エラー発生: {e}")
+        print(f\"エラー発生: {e}\")
         return jsonify({'message': 'サーバエラーが発生しました'}), 500
+
 
 # ------------------------------
 # Admin用API
@@ -158,8 +199,12 @@ def set_profile():
         return jsonify({'message': '未認証です'}), 403
 
     profile_data = request.json
-    save_json(PROFILE_FILE, profile_data)
-    return jsonify({'message': 'プロファイルを更新しました'})
+
+    supabase_response = save_profile_to_supabase(profile_data)
+    if supabase_response.status_code == 201:
+        return jsonify({'message': 'プロファイルを保存しました'})
+    else:
+        return jsonify({'message': '保存失敗', 'error': supabase_response.text}), 500
 
 # ------------------------------
 # メイン
@@ -168,4 +213,3 @@ if __name__ == "__main__":
     from os import environ
     port = int(environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-    
