@@ -145,28 +145,34 @@ def handle_talk():
         profile_data = fetch_profile_from_supabase()
 
         profile_text = (
-            f\"年齢: {profile_data.get('age', '')}歳, \"
-            f\"性別: {profile_data.get('gender', '')}, \"
-            f\"職業: {profile_data.get('job', '')}, \"
-            f\"経歴: {profile_data.get('background', '')}, \"
-            f\"資格: {profile_data.get('certifications', '')}, \"
-            f\"ビジョン: {profile_data.get('vision', '')}\"
+            f"年齢: {profile_data.get('age', '')}歳, "
+            f"性別: {profile_data.get('gender', '')}, "
+            f"職業: {profile_data.get('job', '')}, "
+            f"経歴: {profile_data.get('background', '')}, "
+            f"資格: {profile_data.get('certifications', '')}, "
+            f"ビジョン: {profile_data.get('vision', '')}"
         )
 
-        system_message = f\"\"\"あなたは以下の人物になりきって、クライアントにコーチングを行ってください。\n\n{profile_text}\n\nクライアントの目標は「{user_goal}」です。\n過去の会話履歴も踏まえて、前向きで具体的なアドバイスを1つだけ提案してください。\n\"\"\"
+        system_message = f"""あなたは以下の人物になりきって、クライアントにコーチングを行ってください。
 
-        messages = [{\"role\": \"system\", \"content\": system_message}] + user_history + [{\"role\": \"user\", \"content\": user_message}]
+{profile_text}
+
+クライアントの目標は「{user_goal}」です。
+過去の会話履歴も踏まえて、前向きで具体的なアドバイスを1つだけ提案してください。
+"""
+
+        messages = [{"role": "system", "content": system_message}] + user_history + [{"role": "user", "content": user_message}]
 
         response = client.chat.completions.create(
-            model=\"gpt-4o\",
+            model="gpt-4o",
             messages=messages,
             temperature=0.7,
         )
 
         assistant_message = response.choices[0].message.content.strip()
 
-        user_history.append({\"role\": \"user\", \"content\": user_message})
-        user_history.append({\"role\": \"assistant\", \"content\": assistant_message})
+        user_history.append({"role": "user", "content": user_message})
+        user_history.append({"role": "assistant", "content": assistant_message})
 
         conv_data[user_id] = user_history
         save_json(CONVERSATIONS_FILE, conv_data)
@@ -174,7 +180,7 @@ def handle_talk():
         return jsonify({'message': assistant_message})
 
     except Exception as e:
-        print(f\"エラー発生: {e}\")
+        print(f"エラー発生: {e}")
         return jsonify({'message': 'サーバエラーが発生しました'}), 500
 
 
