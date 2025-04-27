@@ -5,6 +5,12 @@ import json
 import os
 
 app = Flask(__name__)
+# 本番用のセッションCookie設定（SameSite=None + Secure属性）
+app.config.update(
+    SESSION_COOKIE_SAMESITE='None',  # ←ここ注意！None（文字列！）
+    SESSION_COOKIE_SECURE=True,      # ←必ずTrue（https限定）
+)
+
 app.secret_key = os.getenv("SECRET_KEY", "your_default_secret_key")
 CORS(
     app,
