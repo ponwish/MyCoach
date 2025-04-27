@@ -5,8 +5,12 @@ import json
 import os
 
 app = Flask(__name__)
-app.secret_key = "super_secret_admin_key"  # セッション用のシークレットキー
-CORS(app, origins=["https://imaginative-meerkat-5675d3.netlify.app"], supports_credentials=True)
+app.secret_key = os.getenv("SECRET_KEY", "your_default_secret_key")
+CORS(
+    app,
+    origins=["http://127.0.0.1:5500", "https://imaginative-meerkat-5675d3.netlify.app"],
+    supports_credentials=True
+)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
