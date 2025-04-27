@@ -217,15 +217,6 @@ def handle_talk():
             'error': str(e)
         }), 500
 
-@app.route('/healthz', methods=['GET'])
-def healthz():
-    try:
-        res = supabase.table('chat_history').select('id').limit(1).execute()
-        return jsonify({'db': 'ok', 'status': res.status_code}), 200
-    except Exception as e:
-        return jsonify({'db': 'error', 'message': str(e)}), 500
-
-
 # ------------------------------
 # Admin用API
 # ------------------------------
@@ -248,6 +239,23 @@ def set_profile():
         return jsonify({'message': 'プロファイルを保存しました'})
     return jsonify({'message': '保存失敗', 'error': supabase_response.text}), 500
 
+@app.route('/healthz', methods=['GET'])
+def healthz():
+    try:
+        res = supabase.table('chat_history') \
+            .select('id') \
+            .limit(1) \
+            .execute()
+        return jsonify({
+            'db': 'ok',
+            'status': res.status_code,
+            'count': len(res.data)
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'db': 'error',
+            'message': str(e)
+        }), 500
 
 # ------------------------------
 # メイン
