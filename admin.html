@@ -50,7 +50,7 @@ function adminLogin() {
   const adminId = document.getElementById('adminId').value;
   const adminPassword = document.getElementById('adminPassword').value;
 
-  fetch('https://cd34-2400-4051-53a0-f000-61ed-af0f-84bb-7f1a.ngrok-free.app/admin/login', {
+  fetch('https://mycoach.onrender.com/admin/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -82,7 +82,7 @@ function setProfile() {
     vision: document.getElementById('vision').value
   };
 
-  fetch('https://cd34-2400-4051-53a0-f000-61ed-af0f-84bb-7f1a.ngrok-free.app/admin/set_profile', {
+  fetch('https://mycoach.onrender.com/admin/set_profile', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
