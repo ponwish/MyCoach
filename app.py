@@ -256,6 +256,20 @@ def healthz():
             'db': 'error',
             'message': str(e)
         }), 500
+    
+@app.route('/routes', methods=['GET'])
+def list_routes():
+    """
+    現在 Flask が認識している全ルートを返します
+    """
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'rule': str(rule)
+        })
+    return jsonify(routes)
 
 # ------------------------------
 # メイン
