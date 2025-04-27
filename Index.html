@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>コーチングMini App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #e8f4fd;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      align-items: center;
+      padding: 10px;
+    }
+    .card {
+      width: 100%;
+      max-width: 500px;
+      margin-top: 10px;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+    }
+    .chat-container {
+      width: 100%;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #ffffff;
+      border-radius: 8px;
+    }
+    .user-message {
+      text-align: right;
+      margin: 5px 0;
+    }
+    .user-message span {
+      display: inline-block;
+      background: #3399ff;
+      color: #ffffff;
+      padding: 10px;
+      border-radius: 20px 20px 0 20px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .ai-message {
+      text-align: left;
+      margin: 5px 0;
+    }
+    .ai-message span {
+      display: inline-block;
+      background: #f1f0f0;
+      color: #333333;
+      padding: 10px;
+      border-radius: 20px 20px 20px 0;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .btn-primary {
+      width: 100%;
+      border-radius: 30px;
+      margin-top: 10px;
+      background-color: #3399ff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background-color: #2277dd;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card text-center">
+    <h2 id="welcome" class="mb-3">ログイン中...</h2>
+
+    <div id="chat" class="chat-container"></div>
+
+    <div class="input-group mb-3">
+      <input type="text" id="talkInput" class="form-control" placeholder="例：最近モチベーションが下がっています">
+      <button class="btn btn-primary" onclick="sendTalk()">送信</button>
+    </div>
+  </div>
+
+  <script>
+    const liffId = "2007334673-1dVleAwO";
+
+    liff.init({ liffId })
+      .then(() => {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          liff.getProfile().then(profile => {
+            document.getElementById('welcome').textContent = `こんにちは、${profile.displayName}さん！`;
+            window.userId = profile.userId;
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('LIFF Init failed', err);
+        document.getElementById('welcome').textContent = "エラー発生...";
+      });
+
+    function appendUserMessage(message) {
+      const chat = document.getElementById('chat');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'user-message';
+      msgDiv.innerHTML = `<span>${message}</span>`;
+      chat.appendChild(msgDiv);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendAIMessage(message) {
+      const chat = document.getElementById('chat');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'ai-message';
+      msgDiv.innerHTML = `<span>${message}</span>`;
+      chat.appendChild(msgDiv);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendTalk() {
+      const message = document.getElementById('talkInput').value;
+      if (!message) {
+        alert('メッセージを入力してください！');
+        return;
+      }
+
+      appendUserMessage(message);
+      document.getElementById('talkInput').value = '';
+
+      fetch('https://cd34-2400-4051-53a0-f000-61ed-af0f-84bb-7f1a.ngrok-free.app/talk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: window.userId || '',
+          message: message
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        appendAIMessage(data.message);
+      })
+      .catch(err => {
+        console.error(err);
+        alert('送信に失敗しました');
+      });
+    }
+  </script>
+
+</body>
+</html>
