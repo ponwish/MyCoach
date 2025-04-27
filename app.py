@@ -246,10 +246,16 @@ def healthz():
             .select('id') \
             .limit(1) \
             .execute()
+        # エラーがあればエラー内容を返す
+        if res.error:
+            return jsonify({
+                'db': 'error',
+                'message': str(res.error)
+            }), 500
+        # 正常: レコード件数だけ返す
         return jsonify({
             'db': 'ok',
-            'status': res.status_code,
-            'count': len(res.data)
+            'count': len(res.data or [])
         }), 200
     except Exception as e:
         return jsonify({
