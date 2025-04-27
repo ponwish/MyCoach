@@ -53,6 +53,7 @@ function adminLogin() {
   fetch('https://mycoach.onrender.com/admin/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
       admin_id: adminId,
       admin_password: adminPassword
