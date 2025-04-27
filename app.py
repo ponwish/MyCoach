@@ -212,10 +212,10 @@ def handle_talk():
         traceback.print_exc()
 
         # クライアントにもエラー内容を返す
-        return jsonify({
-            'message': 'サーバエラーが発生しました',
-            'error': str(e)
-        }), 500
+       return jsonify({
+           'message': 'サーバエラーが発生しました',
+           'error': str(e)
+       }), 500
 
 # ------------------------------
 # Admin用API
