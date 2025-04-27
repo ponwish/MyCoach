@@ -7,6 +7,7 @@ from flask_cors import CORS
 from openai import OpenAI
 from supabase import create_client, Client
 import requests
+import traceback
 
 app = Flask(__name__)
 # 本番用セッションCookie設定（SameSite=None + Secure属性）
@@ -207,8 +208,22 @@ def handle_talk():
         return jsonify({'message': assistant_message})
 
     except Exception as e:
-        print(f"エラー発生: {e}")
-        return jsonify({'message': 'サーバエラーが発生しました'}), 500
+        # サーバログにスタックトレースを出力
+        traceback.print_exc()
+
+        # クライアントにもエラー内容を返す
+        return jsonify({
+            'message': 'サーバエラーが発生しました',
+            'error': str(e)
+        }), 500
+
+@app.route('/healthz', methods=['GET'])
+def healthz():
+    try:
+        res = supabase.table('chat_history').select('id').limit(1).execute()
+        return jsonify({'db': 'ok', 'status': res.status_code}), 200
+    except Exception as e:
+        return jsonify({'db': 'error', 'message': str(e)}), 500
 
 
 # ------------------------------
