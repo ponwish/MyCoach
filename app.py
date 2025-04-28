@@ -2,13 +2,13 @@ import os
 import json
 import uuid
 from datetime import datetime
-from flask import Flask, request, jsonify, session, abort
+from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 from openai import OpenAI
 from supabase import create_client, Client
 import requests
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 # 本番用セッションCookie設定（SameSite=None + Secure属性）
 app.config.update(
     SESSION_COOKIE_SAMESITE='None',
@@ -221,6 +221,13 @@ def handle_talk():
 # ------------------------------
 # Admin用API
 # ------------------------------
+# 管理画面表示用（GET）
+@app.route('/admin/login', methods=['GET'])
+def serve_admin_login():
+    # static/admin.html を返す
+    return send_from_directory(app.static_folder, 'admin.html')
+
+# 既存の /admin/login POST 処理はそのまま残す
 @app.route('/admin/login', methods=['POST'])
 def admin_login():
     data = request.json
@@ -228,7 +235,6 @@ def admin_login():
         session['admin_logged_in'] = True
         return jsonify({'message': 'ログイン成功'})
     return jsonify({'message': '認証失敗'}), 401
-
 
 @app.route('/admin/set_profile', methods=['POST'])
 def set_profile():
