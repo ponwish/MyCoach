@@ -16,6 +16,7 @@
     .ai-message { text-align:left; margin:5px 0; }
     .ai-message span { background:#e0e0e0; color:#333; padding:8px; border-radius:20px 20px 20px 0; display:inline-block; max-width:80%; word-wrap:break-word; }
     #coachSelect { margin-bottom:10px; }
+    #currentCoach { font-size:0.9rem; margin-bottom:10px; }
   </style>
 </head>
 <body>
@@ -33,7 +34,8 @@
 
   <!-- コーチ選択画面 -->
   <div class="card" id="coach-select-area" style="display:none;">
-    <h4>担当コーチを選択</h4>
+    <h4>担当コーチを変更</h4>
+    <div id="currentCoach">現在の担当コーチ: <strong id="currentCoachName">読み込み中...</strong></div>
     <select id="coachSelect" class="form-select">
       <option value="">-- 選択してください --</option>
     </select>
@@ -85,7 +87,7 @@
   // コーチ変更画面へ
   function goToCoachChange() {
     hideAll();
-    fetchCoaches();
+    loadCoachChange();
   }
 
   // 画面をすべて非表示に
@@ -95,28 +97,48 @@
     });
   }
 
-  // 担当コーチの有無チェック
-  function checkAssignedCoach() {
+  // 担当コーチチェック＋選択画面表示
+  function loadCoachChange() {
+    // 現在の担当コーチ取得
     fetch(`${API_BASE_URL}/user/coach?userId=${userId}`)
       .then(res => res.ok ? res.json() : Promise.reject())
-      .then(() => showHome())
-      .catch(() => goToCoachChange());
-  }
-
-  // コーチ一覧取得
-  function fetchCoaches() {
-    fetch(`${API_BASE_URL}/coaches`)
-      .then(res => res.json())
       .then(data => {
-        const sel = document.getElementById('coachSelect');
-        sel.innerHTML = '<option value="">-- 選択してください --</option>';
-        data.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c.id;
-          opt.text = `${c.code_id} ${c.name}`;
-          sel.add(opt);
-        });
-        document.getElementById('coach-select-area').style.display = 'block';
+        const currentId = data.coachId;
+        // コーチ一覧取得
+        fetch(`${API_BASE_URL}/coaches`)
+          .then(res => res.json())
+          .then(list => {
+            const sel = document.getElementById('coachSelect');
+            sel.innerHTML = '<option value="">-- 選択してください --</option>';
+            list.forEach(c => {
+              const opt = document.createElement('option');
+              opt.value = c.id;
+              opt.text = `${c.code_id} ${c.name}`;
+              if (c.id === currentId) {
+                opt.selected = true;
+                document.getElementById('currentCoachName').textContent = opt.text;
+              }
+              sel.add(opt);
+            });
+            document.getElementById('coach-select-area').style.display = 'block';
+          });
+      })
+      .catch(() => {
+        // 未設定の場合
+        document.getElementById('currentCoachName').textContent = '未設定';
+        fetch(`${API_BASE_URL}/coaches`)
+          .then(res => res.json())
+          .then(list => {
+            const sel = document.getElementById('coachSelect');
+            sel.innerHTML = '<option value="">-- 選択してください --</option>';
+            list.forEach(c => {
+              const opt = document.createElement('option');
+              opt.value = c.id;
+              opt.text = `${c.code_id} ${c.name}`;
+              sel.add(opt);
+            });
+            document.getElementById('coach-select-area').style.display = 'block';
+          });
       });
   }
 
@@ -125,7 +147,8 @@
     const coachId = document.getElementById('coachSelect').value;
     if (!coachId) { alert('コーチを選択してください'); return; }
     fetch(`${API_BASE_URL}/user/assign_coach`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ userId, coachId })
     })
     .then(res => res.ok ? showHome() : alert('登録失敗'));
@@ -141,7 +164,8 @@
     chat.appendChild(userDiv);
     document.getElementById('talkInput').value = '';
     fetch(`${API_BASE_URL}/talk`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ userId, message: msg })
     })
     .then(res => res.json())
