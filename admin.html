@@ -2,103 +2,174 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Admin - コーチプロファイル設定</title>
+  <title>Admin - コーチプロファイル管理</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body {
-      background: #f0f8ff;
-      padding: 30px;
-    }
-    .card {
-      max-width: 500px;
-      margin: 0 auto;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-    }
-    .form-control, .btn {
-      margin-top: 10px;
-    }
+    body { background: #f0f8ff; padding: 30px; }
+    .card { max-width: 600px; margin: 0 auto 20px; padding: 20px; border-radius: 16px; box-shadow: 0px 4px 8px rgba(0,0,0,0.1); }
+    .form-control, .btn { margin-top: 10px; }
+    #profile-list .card { cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div class="card">
   <h2 class="text-center">Admin ログイン</h2>
-
   <div id="login-form">
     <input type="text" id="adminId" class="form-control" placeholder="Admin ID">
     <input type="password" id="adminPassword" class="form-control" placeholder="Password">
     <button class="btn btn-primary w-100" onclick="adminLogin()">ログイン</button>
   </div>
+</div>
 
-  <div id="profile-form" style="display:none;">
-    <h4 class="text-center mt-4">コーチプロファイル設定</h4>
-    <input type="number" id="age" class="form-control" placeholder="年齢">
-    <input type="text" id="gender" class="form-control" placeholder="性別">
-    <input type="text" id="job" class="form-control" placeholder="職業">
-    <textarea id="background" class="form-control" placeholder="経歴"></textarea>
-    <textarea id="certifications" class="form-control" placeholder="資格"></textarea>
-    <textarea id="vision" class="form-control" placeholder="ビジョン"></textarea>
-    <button class="btn btn-success w-100" onclick="setProfile()">プロファイル保存</button>
+<div id="admin-area" style="display:none;">
+
+  <!-- コーチ一覧表示 -->
+  <div class="card">
+    <h4 class="text-center">コーチ一覧</h4>
+    <div id="profile-list"></div>
   </div>
+
+  <!-- 新規コーチ追加フォーム -->
+  <div class="card">
+    <h4 class="text-center">新規コーチ追加</h4>
+    <input type="text" id="newName" class="form-control" placeholder="コーチ名">
+    <input type="number" id="newAge" class="form-control" placeholder="年齢">
+    <input type="text" id="newGender" class="form-control" placeholder="性別">
+    <input type="text" id="newJob" class="form-control" placeholder="職業">
+    <textarea id="newBackground" class="form-control" placeholder="経歴"></textarea>
+    <textarea id="newCertifications" class="form-control" placeholder="資格"></textarea>
+    <textarea id="newVision" class="form-control" placeholder="ビジョン"></textarea>
+    <button class="btn btn-success w-100" onclick="createProfile()">追加</button>
+  </div>
+
+  <!-- コーチ情報編集フォーム -->
+  <div id="editForm" class="card" style="display:none;">
+    <h4 class="text-center">コーチ情報編集</h4>
+    <input type="hidden" id="editId">
+    <input type="text" id="editName" class="form-control" placeholder="コーチ名">
+    <input type="number" id="editAge" class="form-control" placeholder="年齢">
+    <input type="text" id="editGender" class="form-control" placeholder="性別">
+    <input type="text" id="editJob" class="form-control" placeholder="職業">
+    <textarea id="editBackground" class="form-control" placeholder="経歴"></textarea>
+    <textarea id="editCertifications" class="form-control" placeholder="資格"></textarea>
+    <textarea id="editVision" class="form-control" placeholder="ビジョン"></textarea>
+    <button class="btn btn-primary w-100" onclick="updateProfile()">更新</button>
+    <button class="btn btn-danger w-100 mt-2" onclick="deleteProfile()">削除</button>
+  </div>
+
 </div>
 
 <script>
 function adminLogin() {
   const adminId = document.getElementById('adminId').value;
   const adminPassword = document.getElementById('adminPassword').value;
-
-  fetch('https://mycoach.onrender.com/admin/login', {
+  fetch('/admin/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({
-      admin_id: adminId,
-      admin_password: adminPassword
-    })
+    body: JSON.stringify({ admin_id: adminId, admin_password: adminPassword })
   })
-  .then(response => {
-    if (response.ok) {
+  .then(res => {
+    if (res.ok) {
       document.getElementById('login-form').style.display = 'none';
-      document.getElementById('profile-form').style.display = 'block';
+      document.getElementById('admin-area').style.display = 'block';
+      fetchProfiles();
     } else {
       alert('ログイン失敗');
     }
-  })
-  .catch(err => {
-    console.error(err);
-    alert('通信エラー');
   });
 }
 
-function setProfile() {
-  const profile = {
-    age: document.getElementById('age').value,
-    gender: document.getElementById('gender').value,
-    job: document.getElementById('job').value,
-    background: document.getElementById('background').value,
-    certifications: document.getElementById('certifications').value,
-    vision: document.getElementById('vision').value
-  };
+function fetchProfiles() {
+  fetch('/admin/profiles', { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById('profile-list');
+      list.innerHTML = data.map(p => `
+        <div class="card p-2 mb-2" onclick="showEditForm('${p.id}')">
+          <strong>${p.name || ''}</strong> (${p.job || ''})
+        </div>
+      `).join('');
+    });
+}
 
-  fetch('https://mycoach.onrender.com/admin/set_profile', {
+function showEditForm(id) {
+  fetch('/admin/profiles', { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const p = data.find(x => x.id === id);
+      document.getElementById('editId').value = p.id;
+      document.getElementById('editName').value = p.name || '';
+      document.getElementById('editAge').value = p.age || '';
+      document.getElementById('editGender').value = p.gender || '';
+      document.getElementById('editJob').value = p.job || '';
+      document.getElementById('editBackground').value = p.background || '';
+      document.getElementById('editCertifications').value = p.certifications || '';
+      document.getElementById('editVision').value = p.vision || '';
+      document.getElementById('editForm').style.display = 'block';
+    });
+}
+
+function createProfile() {
+  const payload = {
+    name: document.getElementById('newName').value,
+    age: parseInt(document.getElementById('newAge').value),
+    gender: document.getElementById('newGender').value,
+    job: document.getElementById('newJob').value,
+    background: document.getElementById('newBackground').value,
+    certifications: document.getElementById('newCertifications').value,
+    vision: document.getElementById('newVision').value
+  };
+  fetch('/admin/profiles', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(profile)
+    body: JSON.stringify(payload)
   })
-  .then(response => {
-    if (response.ok) {
-      alert('プロファイルを保存しました！');
-    } else {
-      alert('保存失敗');
-    }
+  .then(res => {
+    if (res.ok) fetchProfiles();
+    else alert('追加失敗');
+  });
+}
+
+function updateProfile() {
+  const id = document.getElementById('editId').value;
+  const payload = {
+    name: document.getElementById('editName').value,
+    age: parseInt(document.getElementById('editAge').value),
+    gender: document.getElementById('editGender').value,
+    job: document.getElementById('editJob').value,
+    background: document.getElementById('editBackground').value,
+    certifications: document.getElementById('editCertifications').value,
+    vision: document.getElementById('editVision').value
+  };
+  fetch(`/admin/profiles/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload)
   })
-  .catch(err => {
-    console.error(err);
-    alert('通信エラー');
+  .then(res => {
+    if (res.ok) {
+      fetchProfiles();
+      document.getElementById('editForm').style.display = 'none';
+    } else alert('更新失敗');
+  });
+}
+
+function deleteProfile() {
+  const id = document.getElementById('editId').value;
+  fetch(`/admin/profiles/${id}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  })
+  .then(res => {
+    if (res.ok) {
+      fetchProfiles();
+      document.getElementById('editForm').style.display = 'none';
+    } else alert('削除失敗');
   });
 }
 </script>

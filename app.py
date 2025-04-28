@@ -273,6 +273,46 @@ def list_routes():
         })
     return jsonify(routes)
 
+# --- コーチ一覧取得 ---
+@app.route('/admin/profiles', methods=['GET'])
+def list_profiles():
+    if not session.get('admin_logged_in'):
+        return abort(403)
+    res = supabase.table('profiles').select('*').execute()
+    return jsonify(res.data), 200
+
+# --- コーチ新規作成 ---
+@app.route('/admin/profiles', methods=['POST'])
+def create_profile():
+    if not session.get('admin_logged_in'):
+        return abort(403)
+    payload = request.json
+    payload['id'] = str(uuid.uuid4())
+    payload['created_at'] = datetime.utcnow().isoformat()
+    res = supabase.table('profiles').insert(payload).execute()
+    return jsonify(res.data[0]), 201
+
+# --- コーチ情報更新 ---
+@app.route('/admin/profiles/<profile_id>', methods=['PATCH'])
+def update_profile(profile_id):
+    if not session.get('admin_logged_in'):
+        return abort(403)
+    updates = request.json
+    res = supabase.table('profiles') \
+        .update(updates) \
+        .eq('id', profile_id) \
+        .execute()
+    return jsonify(res.data[0]), 200
+
+# --- コーチ削除 ---
+@app.route('/admin/profiles/<profile_id>', methods=['DELETE'])
+def delete_profile(profile_id):
+    if not session.get('admin_logged_in'):
+        return abort(403)
+    supabase.table('profiles').delete().eq('id', profile_id).execute()
+    return '', 204
+
+
 # ------------------------------
 # メイン
 # ------------------------------
