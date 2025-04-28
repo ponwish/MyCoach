@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Myコーチ App</title>
+  <title>コーチングMini App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -19,6 +19,11 @@
   </style>
 </head>
 <body>
+  <!-- API サーバ URL 定義 -->
+  <script>
+    const API_BASE_URL = 'https://mycoach.onrender.com';
+  </script>
+
   <!-- ホーム画面 -->
   <div class="card" id="home-area" style="display:none;">
     <h4>ようこそ</h4>
@@ -60,7 +65,10 @@
       userId = profile.userId;
       checkAssignedCoach();
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+      console.error(err);
+      showHome();
+    });
 
   // ホーム画面表示
   function showHome() {
@@ -89,7 +97,7 @@
 
   // 担当コーチの有無チェック
   function checkAssignedCoach() {
-    fetch(`${liff.getContext().apiHost}/user/coach?userId=${userId}`)
+    fetch(`${API_BASE_URL}/user/coach?userId=${userId}`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(() => showHome())
       .catch(() => goToCoachChange());
@@ -97,7 +105,7 @@
 
   // コーチ一覧取得
   function fetchCoaches() {
-    fetch(`${liff.getContext().apiHost}/coaches`)
+    fetch(`${API_BASE_URL}/coaches`)
       .then(res => res.json())
       .then(data => {
         const sel = document.getElementById('coachSelect');
@@ -112,11 +120,11 @@
       });
   }
 
-  // コーチ決定
+  // コーチ確定
   function confirmCoach() {
     const coachId = document.getElementById('coachSelect').value;
     if (!coachId) { alert('コーチを選択してください'); return; }
-    fetch(`${liff.getContext().apiHost}/user/assign_coach`, {
+    fetch(`${API_BASE_URL}/user/assign_coach`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ userId, coachId })
     })
@@ -132,7 +140,7 @@
     userDiv.className = 'user-message'; userDiv.innerHTML = `<span>${msg}</span>`;
     chat.appendChild(userDiv);
     document.getElementById('talkInput').value = '';
-    fetch(`${liff.getContext().apiHost}/talk`, {
+    fetch(`${API_BASE_URL}/talk`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ userId, message: msg })
     })
