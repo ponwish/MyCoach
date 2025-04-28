@@ -161,7 +161,7 @@ def handle_talk():
         history_res = supabase.table('chat_history') \
             .select('role, content') \
             .eq('user_id', user_id) \
-            .order('created_at', {'ascending': True}) \
+            .order('created_at', ascending=True) \
             .execute()
         user_history = [
             {'role': rec['role'], 'content': rec['content']} 
