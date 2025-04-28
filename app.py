@@ -157,15 +157,17 @@ def handle_talk():
             f"ビジョン: {profile_data.get('vision','')}"
         )
 
-        # 過去の会話履歴をDBから取得
+        # 過去の会話履歴をDBから取得（Python側でソート）
         history_res = supabase.table('chat_history') \
-            .select('role, content') \
+            .select('role, content, created_at') \
             .eq('user_id', user_id) \
-            .order('created_at', ascending=True) \
             .execute()
+        raw = history_res.data or []
+        # created_at 順にソート（ISO 8601 なので文字列ソートでOK）
+        sorted_history = sorted(raw, key=lambda x: x['created_at'])
         user_history = [
-            {'role': rec['role'], 'content': rec['content']} 
-            for rec in history_res.data
+            {'role': rec['role'], 'content': rec['content']}
+            for rec in sorted_history
         ]
 
         # システムメッセージ組立て
