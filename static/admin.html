@@ -36,7 +36,6 @@
   <!-- 新規コーチ追加フォーム -->
   <div class="card">
     <h4 class="text-center">新規コーチ追加</h4>
-    <input type="text" id="newCodeId" class="form-control" placeholder="（自動生成）コーチIDは不要">
     <input type="text" id="newName" class="form-control" placeholder="コーチ名">
     <input type="number" id="newAge" class="form-control" placeholder="年齢">
     <input type="text" id="newGender" class="form-control" placeholder="性別">
@@ -61,7 +60,7 @@
     <textarea id="editCertifications" class="form-control" placeholder="資格"></textarea>
     <textarea id="editVision" class="form-control" placeholder="ビジョン"></textarea>
     <button class="btn btn-primary w-100" onclick="updateProfile()">更新</button>
-    <button class="btn btn-warning w-100 mt-2" onclick="softDeleteProfile()">利用停止</button>
+    <button class="btn btn-warning w-100 mt-2" onclick="softDeleteProfile()">受付停止</button>
   </div>
 
 </div>
@@ -96,7 +95,7 @@ function fetchProfiles() {
         <div class="card p-2 mb-2" onclick="showEditForm('${p.id}')">
           <div><strong>コーチID:</strong> ${p.code_id || ''}</div>
           <div><strong>名前:</strong> ${p.name || ''}</div>
-          <div><strong>ステータス:</strong> <span class="status-${p.availability_status}">${p.availability_status ? '有効' : '停止中'}</span></div>
+          <div><strong>ステータス:</strong> <span class="status-${p.availability_status}">${p.availability_status ? '受付中' : '受付停止中'}</span></div>
         </div>
       `).join('');
     });
@@ -109,7 +108,7 @@ function showEditForm(id) {
       const p = data.find(x => x.id === id);
       document.getElementById('editId').value = p.id;
       document.getElementById('editCodeId').textContent = p.code_id;
-      document.getElementById('editStatus').textContent = p.availability_status ? '有効' : '停止中';
+      document.getElementById('editStatus').textContent = p.availability_status ? '受付中' : '受付停止中';
       document.getElementById('editName').value = p.name || '';
       document.getElementById('editAge').value = p.age || '';
       document.getElementById('editGender').value = p.gender || '';
