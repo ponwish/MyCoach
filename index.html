@@ -7,52 +7,52 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background: #e8f4fd; min-height:100vh; padding:0; margin:0; font-family: sans-serif; }
-    header { 
-      position: fixed; top:0; left:0; right:0; 
-      background:#3399ff; color:#fff; height:50px; 
-      display:flex; align-items:center; justify-content: space-between;
-      padding:0 15px; z-index:2000;
+    body { background: #e8f4fd; min-height: 100vh; padding: 0; margin: 0; font-family: sans-serif; }
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #3399ff; color: #fff; height: 50px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 15px; z-index: 2000;
     }
-    #hamburger { 
-      font-size:24px; background:none; border:none; color:#fff; cursor:pointer;
-      z-index:2001;
+    #hamburger {
+      font-size: 24px; background: none; border: none; color: #fff; cursor: pointer;
+      z-index: 2001;
     }
-    #menu { 
-      position:absolute; top:50px; right:15px; width:200px; 
-      background:#fff; box-shadow:0 4px 8px rgba(0,0,0,0.1);
-      display:none; z-index:2000;
+    #menu {
+      position: absolute; top: 50px; right: 15px; width: 200px;
+      background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: none; z-index: 2000;
     }
-    #menu ul { list-style:none; padding:0; margin:0; }
-    #menu li { padding:10px; border-bottom:1px solid #eee; cursor:pointer; }
-    #menu li:hover { background:#f0f0f0; }
-    main { padding-top:60px; display:flex; justify-content:center; }
-    .card { 
-      width:100%; max-width:400px; margin:10px; padding:20px; 
-      background:#fff; border-radius:12px; box-shadow:0 4px 8px rgba(0,0,0,0.1);
-      text-align:center; 
+    #menu ul { list-style: none; padding: 0; margin: 0; }
+    #menu li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+    #menu li:hover { background: #f0f0f0; }
+    main { padding-top: 60px; display: flex; justify-content: center; }
+    .card {
+      width: 100%; max-width: 400px; margin: 10px; padding: 20px;
+      background: #fff; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-align: center;
     }
-    .btn { width:100%; margin-top:10px; border-radius:30px; }
-    .chat-container { 
-      max-height:300px; overflow-y:auto; padding:10px;
-      background:#f9f9f9; border-radius:8px; margin-bottom:15px;
+    .btn { width: 100%; margin-top: 10px; border-radius: 30px; }
+    .chat-container {
+      max-height: 300px; overflow-y: auto; padding: 10px;
+      background: #f9f9f9; border-radius: 8px; margin-bottom: 15px;
     }
-    .user-message { text-align:right; margin:5px 0; }
-    .user-message span { 
-      background:#3399ff; color:#fff; padding:8px;
-      border-radius:20px 20px 0 20px; display:inline-block;
-      max-width:80%; word-wrap:break-word;
+    .user-message { text-align: right; margin: 5px 0; }
+    .user-message span {
+      background: #3399ff; color: #fff; padding: 8px;
+      border-radius: 20px 20px 0 20px; display: inline-block;
+      max-width: 80%; word-wrap: break-word;
     }
-    .ai-message { text-align:left; margin:5px 0; }
-    .ai-message span { 
-      background:#e0e0e0; color:#333; padding:8px;
-      border-radius:20px 20px 20px 0; display:inline-block;
-      max-width:80%; word-wrap:break-word;
+    .ai-message { text-align: left; margin: 5px 0; }
+    .ai-message span {
+      background: #e0e0e0; color: #333; padding: 8px;
+      border-radius: 20px 20px 20px 0; display: inline-block;
+      max-width: 80%; word-wrap: break-word;
     }
-    #suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:10px; }
-    #suggestions .btn-light { font-size:0.8rem; padding:5px 10px; }
-    #coachSelect, #historyList { margin-bottom:10px; }
-    #currentCoach { font-size:0.9rem; margin-bottom:10px; }
+    #suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px; }
+    #suggestions .btn-light { font-size: 0.8rem; padding: 5px 10px; }
+    #coachSelect, #historyFilterSelect { margin-bottom: 10px; }
+    #currentCoach, #historyHeader { font-size: 0.9rem; margin-bottom: 10px; text-align: left; }
   </style>
 </head>
 <body>
@@ -89,13 +89,10 @@
     <!-- トーク履歴画面 -->
     <div class="card" id="history-area" style="display:none;">
       <h4>トーク履歴</h4>
-      <div id="historyHeader" class="mb-2 text-muted"></div>
-
-      <!-- 追加：コーチ選択 -->
-      <select id="historyCoachSelect" class="form-select mb-2">
+      <div id="historyHeader">担当コーチ: 読み込み中...</div>
+      <select id="historyFilterSelect" class="form-select mb-2">
         <option value="">── 全コーチ ──</option>
       </select>
-
       <div id="historyList" class="chat-container"></div>
     </div>
   </main>
@@ -103,31 +100,41 @@
   <script>
     const API_BASE_URL = 'https://mycoach.onrender.com';
     let userId = '';
-    // サジェスト文一覧
+    // サジェスト文
     const suggestionTexts = [
       '最近の気分はどうですか？',
       '今日の目標は何ですか？',
       'チャレンジしたいことは？',
       '何でも相談してください'
     ];
+
     // LIFF 初期化
     liff.init({ liffId: '2007334673-1dVleAwO' })
       .then(() => !liff.isLoggedIn() ? liff.login() : liff.getProfile())
       .then(profile => { userId = profile.userId; showSection('chat'); })
       .catch(() => showSection('chat'));
+
     // メニュー制御
     function toggleMenu() {
       const menu = document.getElementById('menu');
-      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     }
     document.addEventListener('click', e => {
       if (!e.target.closest('#menu') && e.target.id !== 'hamburger') {
         document.getElementById('menu').style.display = 'none';
       }
     });
+
     // ナビゲーション
-    function navigate(section) { toggleMenu(); showSection(section); }
-    function hideAll() { ['chat-area','coach-select-area','history-area'].forEach(id => document.getElementById(id).style.display = 'none'); }
+    function navigate(section) {
+      toggleMenu();
+      showSection(section);
+    }
+    function hideAll() {
+      ['chat-area','coach-select-area','history-area'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+    }
     function showSection(section) {
       hideAll();
       if (section === 'chat') {
@@ -137,6 +144,7 @@
       if (section === 'coach') loadCoachChange();
       if (section === 'history') loadHistory();
     }
+
     // サジェストチップ描画
     function renderSuggestions() {
       const container = document.getElementById('suggestions');
@@ -152,6 +160,7 @@
         container.appendChild(btn);
       });
     }
+
     // チャット送信
     function sendTalk() {
       const msg = document.getElementById('talkInput').value;
@@ -160,74 +169,96 @@
       const userDiv = document.createElement('div'); userDiv.className = 'user-message'; userDiv.innerHTML = `<span>${msg}</span>`;
       chat.appendChild(userDiv);
       document.getElementById('talkInput').value = '';
-      fetch(`${API_BASE_URL}/talk`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, message: msg })})
-        .then(res => res.json()).then(data => {
-          const aiDiv = document.createElement('div'); aiDiv.className = 'ai-message'; aiDiv.innerHTML = `<span>${data.message}</span>`;
-          chat.appendChild(aiDiv); chat.scrollTop = chat.scrollHeight;
-        });
+      fetch(`${API_BASE_URL}/talk`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ userId, message: msg })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const aiDiv = document.createElement('div'); aiDiv.className = 'ai-message'; aiDiv.innerHTML = `<span>${data.message}</span>`;
+        chat.appendChild(aiDiv); chat.scrollTop = chat.scrollHeight;
+      });
     }
-    // コーチ変更
-    function loadCoachChange() {
-      fetch(`${API_BASE_URL}/user/coach?userId=${userId}`)
-        .then(res => res.ok ? res.json() : Promise.reject())
-        .then(mapping => document.getElementById('currentCoachName').textContent = mapping.coachId)
-        .catch(() => document.getElementById('currentCoachName').textContent = '未設定');
-      fetch(`${API_BASE_URL}/coaches`)
-        .then(res => res.json()).then(list => {
-          const sel = document.getElementById('coachSelect'); sel.innerHTML = '<option value="">-- 選択してください --</option>';
-          list.forEach(c => sel.add(new Option(`${c.code_id} ${c.name}`, c.id)));
-          document.getElementById('coach-select-area').style.display = 'block';
-        });
+
+    // コーチ変更機能
+    async function loadCoachChange() {
+      hideAll();
+      // 現在担当コーチ取得
+      let mapping;
+      try {
+        mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.ok ? r.json() : Promise.reject());
+      } catch {
+        mapping = null;
+      }
+      // コーチ一覧取得
+      const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
+      const sel = document.getElementById('coachSelect');
+      sel.innerHTML = '<option value="">-- 選択してください --</option>';
+      coaches.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.text = `${c.code_id} ${c.name}`;
+        if (mapping && mapping.coachId === c.id) {
+          opt.selected = true;
+          document.getElementById('currentCoachName').textContent = opt.text;
+        }
+        sel.appendChild(opt);
+      });
+      document.getElementById('coach-select-area').style.display = 'block';
     }
+
     function confirmCoach() {
       const coachId = document.getElementById('coachSelect').value;
       if (!coachId) return alert('コーチを選択してください');
-      fetch(`${API_BASE_URL}/user/assign_coach`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, coachId })})
-        .then(res => res.ok && showSection('coach'));
+      fetch(`${API_BASE_URL}/user/assign_coach`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ userId, coachId })
+      }).then(res => res.ok && showSection('coach'));
     }
+
+    // 履歴表示機能
     async function loadHistory() {
-  hideAll();
-
-  // 1) コーチ一覧取得（全体フィルタ用）
-  const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
-  const sel = document.getElementById('historyCoachSelect');
-  sel.innerHTML = '<option value="">── 全コーチ ──</option>';
-  coaches.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.text = `${c.code_id} ${c.name}`;
-    sel.add(opt);
-  });
-
-  // 2) ドロップダウンの change イベントで再読み込み
-  sel.onchange = () => loadHistory(); // 自身を再呼び出し
-
-  // 3) header に現在担当コーチを出す（任意）
-  document.getElementById('historyHeader').textContent = 
-    `現在担当コーチ: ${coaches.find(c=>c.id===currentCoachId)?.code_id+' '+coaches.find(c=>c.id===currentCoachId)?.name || '未設定'}`;
-
-  // 4) 履歴取得
-  const params = new URLSearchParams({ userId });
-  if (sel.value) params.append('coachId', sel.value);
-  const data = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
-
-  // 5) 表示
-  const listEl = document.getElementById('historyList');
-  listEl.innerHTML = '';
-  data.forEach(msg => {
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'text-center text-muted small mb-1';
-    timeDiv.textContent = new Date(msg.created_at).toLocaleString();
-    listEl.appendChild(timeDiv);
-
-    const bubble = document.createElement('div');
-    bubble.className = msg.role === 'user' ? 'user-message' : 'ai-message';
-    bubble.innerHTML = `<span>${msg.content}</span>`;
-    listEl.appendChild(bubble);
-  });
-
-  document.getElementById('history-area').style.display = 'block';
-}
+      hideAll();
+      // コーチ一覧
+      const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
+      // コーチマッピング
+      let mapping;
+      try {
+        mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.ok ? r.json() : Promise.reject());
+      } catch {
+        mapping = null;
+      }
+      // ヘッダーに担当コーチ名
+      const header = document.getElementById('historyHeader');
+      if (mapping && mapping.coachId) {
+        const current = coaches.find(c => c.id === mapping.coachId);
+        header.textContent = `担当コーチ: ${current.code_id} ${current.name}`;
+      } else {
+        header.textContent = '担当コーチ: 未設定';
+      }
+      // フィルタ用セレクト
+      const filterSel = document.getElementById('historyFilterSelect');
+      filterSel.innerHTML = '<option value="">── 全コーチ ──</option>';
+      coaches.forEach(c => filterSel.appendChild(new Option(`${c.code_id} ${c.name}`, c.id)));
+      filterSel.onchange = loadHistory;
+      // 履歴取得
+      const params = new URLSearchParams({ userId });
+      if (filterSel.value) params.append('coachId', filterSel.value);
+      const data = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
+      // 表示
+      const listEl = document.getElementById('historyList');
+      listEl.innerHTML = '';
+      data.forEach(msg => {
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'text-center text-muted small mb-1';
+        timeDiv.textContent = new Date(msg.created_at).toLocaleString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+        listEl.appendChild(timeDiv);
+        const bubble = document.createElement('div');
+        bubble.className = msg.role === 'user' ? 'user-message' : 'ai-message';
+        bubble.innerHTML = `<span>${msg.content}</span>`;
+        listEl.appendChild(bubble);
+      });
+      document.getElementById('history-area').style.display = 'block';
+    }
   </script>
 </body>
 </html>
