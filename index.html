@@ -180,29 +180,54 @@
         .then(res => res.ok && showSection('coach'));
     }
 
+    let cachedCoaches = null;
+    
+    // 履歴表示機能
     async function loadHistory() {
       hideAll();
-      const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
       const filterSel = document.getElementById('historyFilterSelect');
-      filterSel.innerHTML = '<option value="">── 全コーチ ──</option>';
-      coaches.forEach(c => filterSel.appendChild(new Option(`${c.code_id} ${c.name}`, c.id)));
-      filterSel.onchange = loadHistory;
-
+      // 初回のみフィルタの選択肢を構築
+      if (!cachedCoaches) {
+        try {
+          cachedCoaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
+        } catch {
+          cachedCoaches = [];
+        }
+        filterSel.innerHTML = '<option value="">── 全コーチ ──</option>';
+        cachedCoaches.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.text = `${c.code_id} ${c.name}`;
+          filterSel.appendChild(opt);
+        });
+        // 選択変更時に再読み込み
+        filterSel.addEventListener('change', loadHistory);
+      }
+      // クエリパラメータ設定
       const params = new URLSearchParams({ userId });
       if (filterSel.value) params.append('coachId', filterSel.value);
-      const data = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
-
-      const listEl = document.getElementById('historyList'); listEl.innerHTML = '';
+      let data = [];
+      try {
+        data = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
+      } catch {
+        alert('履歴の取得に失敗しました');
+      }
+      // 表示
+      const listEl = document.getElementById('historyList');
+      listEl.innerHTML = '';
       data.forEach(msg => {
-        const timeDiv = document.createElement('div'); timeDiv.className = 'text-center text-muted small mb-1';
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'text-center text-muted small mb-1';
         timeDiv.textContent = new Date(msg.created_at).toLocaleString('ja-JP', {
           year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
         });
         listEl.appendChild(timeDiv);
-        const bubble = document.createElement('div'); bubble.className = msg.role==='user'?'user-message':'ai-message';
+        const bubble = document.createElement('div');
+        bubble.className = msg.role === 'user' ? 'user-message' : 'ai-message';
         bubble.innerHTML = `<span>${msg.content}</span>`;
         listEl.appendChild(bubble);
       });
+      // 履歴画面表示
       document.getElementById('history-area').style.display = 'block';
     }
   </script>
