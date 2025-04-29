@@ -204,9 +204,12 @@ def get_history():
         .eq('user_id', user_id) \
         .execute()
     raw = res.data or []
-    # 日付順にソート
     history = sorted(raw, key=lambda x: x['created_at'])
-    return jsonify([{'role': h['role'], 'content': h['content']} for h in history])
+    return jsonify([
+        {'role': h['role'], 'content': h['content'], 'created_at': h['created_at']}
+        for h in history
+    ])
+
 
 # ヘルスチェック
 @app.route('/healthz', methods=['GET'])

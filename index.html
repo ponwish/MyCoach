@@ -89,7 +89,9 @@
     <!-- トーク履歴画面 -->
     <div class="card" id="history-area" style="display:none;">
       <h4>トーク履歴</h4>
+      <div id="historyHeader" class="mb-2 text-muted"></div>
       <div id="historyList" class="chat-container"></div>
+    </div>
     </div>
   </main>
 
@@ -178,20 +180,51 @@
       fetch(`${API_BASE_URL}/user/assign_coach`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, coachId })})
         .then(res => res.ok && showSection('coach'));
     }
-    // 履歴表示
     function loadHistory() {
-      fetch(`${API_BASE_URL}/user/history?userId=${userId}`)
-        .then(res => res.json()).then(data => {
-          const list = document.getElementById('historyList'); list.innerHTML = '';
-          data.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = msg.role==='user'?'user-message':'ai-message';
-            div.innerHTML = `<span>${msg.content}</span>`;
-            list.appendChild(div);
-          });
-          document.getElementById('history-area').style.display = 'block';
+  // 担当コーチ名取得
+  fetch(`${API_BASE_URL}/user/coach?userId=${userId}`)
+    .then(res => res.ok ? res.json() : Promise.reject())
+    .then(mapping => {
+      // プロフィール取得してコーチ名表示
+      return fetch(`${API_BASE_URL}/coaches`);
+    })
+    .then(res => res.json())
+    .then(list => {
+      const mappingCoach = list.find(c => c.id === mapping.coachId);
+      document.getElementById('historyHeader').textContent =
+        `担当コーチ: ${mappingCoach ? mappingCoach.code_id + ' ' + mappingCoach.name : '未設定'}`;
+    })
+    .catch(() => {
+      document.getElementById('historyHeader').textContent = '担当コーチ: 未設定';
+    });
+
+  // 会話履歴取得
+  fetch(`${API_BASE_URL}/user/history?userId=${userId}`)
+    .then(res => res.json())
+    .then(data => {
+      const listEl = document.getElementById('historyList');
+      listEl.innerHTML = '';
+      data.forEach(msg => {
+        const container = document.createElement('div');
+        // タイムスタンプ
+        const time = document.createElement('div');
+        time.className = 'text-center text-muted small mb-1';
+        const dt = new Date(msg.created_at);
+        time.textContent = dt.toLocaleString('ja-JP', {
+          year:'numeric', month:'2-digit', day:'2-digit',
+          hour:'2-digit', minute:'2-digit'
         });
-    }
+        // メッセージバブル
+        const bubble = document.createElement('div');
+        bubble.className = msg.role === 'user' ? 'user-message' : 'ai-message';
+        bubble.innerHTML = `<span>${msg.content}</span>`;
+        listEl.appendChild(time);
+        listEl.appendChild(bubble);
+      });
+      document.getElementById('history-area').style.display = 'block';
+    })
+    .catch(() => alert('履歴の取得に失敗しました'));
+}
   </script>
 </body>
 </html>
