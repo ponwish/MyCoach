@@ -196,6 +196,18 @@ def handle_talk():
         import traceback; traceback.print_exc()
         return jsonify({'message': 'サーバエラーが発生しました', 'error': str(e)}), 500
 
+@app.route('/user/history', methods=['GET'])
+def get_history():
+    user_id = request.args.get('userId', '')
+    res = supabase.table('chat_history') \
+        .select('role, content, created_at') \
+        .eq('user_id', user_id) \
+        .execute()
+    raw = res.data or []
+    # 日付順にソート
+    history = sorted(raw, key=lambda x: x['created_at'])
+    return jsonify([{'role': h['role'], 'content': h['content']} for h in history])
+
 # ヘルスチェック
 @app.route('/healthz', methods=['GET'])
 def healthz():
