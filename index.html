@@ -131,16 +131,38 @@
 
     // コーチ変更機能
     function loadCoachChange() {
-      fetch(`${API_BASE_URL}/user/coach?userId=${userId}`)
-        .then(res => res.ok ? res.json() : Promise.reject())
-        .then(data => document.getElementById('currentCoachName').textContent = data.coachId || '未設定')
-        .catch(() => document.getElementById('currentCoachName').textContent = '未設定');
-      fetch(`${API_BASE_URL}/coaches`)  
+      hideAll();
+      // まず利用可能なコーチ一覧を取得
+      fetch(`${API_BASE_URL}/coaches`)
         .then(res => res.json())
         .then(list => {
-          const sel = document.getElementById('coachSelect'); sel.innerHTML = '<option value="">-- 選択してください --</option>';
-          list.forEach(c => sel.add(new Option(`${c.code_id} ${c.name}`, c.id)));
-          document.getElementById('coach-select-area').style.display = 'block';
+          // 次に現在のユーザ担当コーチを取得
+          fetch(`${API_BASE_URL}/user/coach?userId=${userId}`)
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then(mapping => {
+              const currentId = mapping.coachId;
+              const sel = document.getElementById('coachSelect');
+              sel.innerHTML = '<option value="">-- 選択してください --</option>';
+              list.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.text = `${c.code_id} ${c.name}`;
+                if (c.id === currentId) {
+                  opt.selected = true;
+                  document.getElementById('currentCoachName').textContent = opt.text;
+                }
+                sel.add(opt);
+              });
+              document.getElementById('coach-select-area').style.display = 'block';
+            })
+            .catch(() => {
+              // 未設定の場合
+              document.getElementById('currentCoachName').textContent = '未設定';
+              const sel = document.getElementById('coachSelect');
+              sel.innerHTML = '<option value="">-- 選択してください --</option>';
+              list.forEach(c => sel.add(new Option(`${c.code_id} ${c.name}`, c.id)));
+              document.getElementById('coach-select-area').style.display = 'block';
+            });
         });
     }
 
