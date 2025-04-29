@@ -188,9 +188,23 @@ def handle_talk():
         messages = [{'role':'system','content':system_message}] + user_history + [{'role':'user','content':user_message}]
         res = client.chat.completions.create(model="gpt-4o", messages=messages, temperature=0.7)
         assistant_message = res.choices[0].message.content.strip()
-        # 会話履歴保存
-        supabase.table('chat_history').insert({'user_id':user_id,'role':'user','content':user_message}).execute()
-        supabase.table('chat_history').insert({'user_id':user_id,'role':'assistant','content':assistant_message}).execute()
+        # 会話履歴保存（coach_id も一緒に保存）
+        # client 発言
+        supabase.table('chat_history').insert({
+            'user_id': user_id,
+            'coach_id': coach_id,
+            'role': 'user',
+            'content': user_message,
+            'created_at': datetime.utcnow().isoformat()
+        }).execute()
+        # assistant（コーチ）発言
+        supabase.table('chat_history').insert({
+            'user_id': user_id,
+            'coach_id': coach_id,
+            'role': 'assistant',
+            'content': assistant_message,
+            'created_at': datetime.utcnow().isoformat()
+        }).execute()
         return jsonify({'message': assistant_message})
     except Exception as e:
         import traceback; traceback.print_exc()
@@ -199,16 +213,19 @@ def handle_talk():
 @app.route('/user/history', methods=['GET'])
 def get_history():
     user_id = request.args.get('userId', '')
-    res = supabase.table('chat_history') \
-        .select('role, content, created_at') \
-        .eq('user_id', user_id) \
-        .execute()
+    # coachId パラメータがあれば絞り込み
+    coach_id = request.args.get('coachId')
+    qb = supabase.table('chat_history').select('role, content, created_at').eq('user_id', user_id)
+    if coach_id:
+        qb = qb.eq('coach_id', coach_id)
+    res = qb.execute()
     raw = res.data or []
     history = sorted(raw, key=lambda x: x['created_at'])
     return jsonify([
         {'role': h['role'], 'content': h['content'], 'created_at': h['created_at']}
         for h in history
     ])
+
 
 
 # ヘルスチェック

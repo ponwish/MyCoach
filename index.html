@@ -90,8 +90,13 @@
     <div class="card" id="history-area" style="display:none;">
       <h4>トーク履歴</h4>
       <div id="historyHeader" class="mb-2 text-muted"></div>
+
+      <!-- 追加：コーチ選択 -->
+      <select id="historyCoachSelect" class="form-select mb-2">
+        <option value="">── 全コーチ ──</option>
+      </select>
+
       <div id="historyList" class="chat-container"></div>
-    </div>
     </div>
   </main>
 
@@ -180,50 +185,48 @@
       fetch(`${API_BASE_URL}/user/assign_coach`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, coachId })})
         .then(res => res.ok && showSection('coach'));
     }
-    function loadHistory() {
-  // 担当コーチ名取得
-  fetch(`${API_BASE_URL}/user/coach?userId=${userId}`)
-    .then(res => res.ok ? res.json() : Promise.reject())
-    .then(mapping => {
-      // プロフィール取得してコーチ名表示
-      return fetch(`${API_BASE_URL}/coaches`);
-    })
-    .then(res => res.json())
-    .then(list => {
-      const mappingCoach = list.find(c => c.id === mapping.coachId);
-      document.getElementById('historyHeader').textContent =
-        `担当コーチ: ${mappingCoach ? mappingCoach.code_id + ' ' + mappingCoach.name : '未設定'}`;
-    })
-    .catch(() => {
-      document.getElementById('historyHeader').textContent = '担当コーチ: 未設定';
-    });
+    async function loadHistory() {
+  hideAll();
 
-  // 会話履歴取得
-  fetch(`${API_BASE_URL}/user/history?userId=${userId}`)
-    .then(res => res.json())
-    .then(data => {
-      const listEl = document.getElementById('historyList');
-      listEl.innerHTML = '';
-      data.forEach(msg => {
-        const container = document.createElement('div');
-        // タイムスタンプ
-        const time = document.createElement('div');
-        time.className = 'text-center text-muted small mb-1';
-        const dt = new Date(msg.created_at);
-        time.textContent = dt.toLocaleString('ja-JP', {
-          year:'numeric', month:'2-digit', day:'2-digit',
-          hour:'2-digit', minute:'2-digit'
-        });
-        // メッセージバブル
-        const bubble = document.createElement('div');
-        bubble.className = msg.role === 'user' ? 'user-message' : 'ai-message';
-        bubble.innerHTML = `<span>${msg.content}</span>`;
-        listEl.appendChild(time);
-        listEl.appendChild(bubble);
-      });
-      document.getElementById('history-area').style.display = 'block';
-    })
-    .catch(() => alert('履歴の取得に失敗しました'));
+  // 1) コーチ一覧取得（全体フィルタ用）
+  const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
+  const sel = document.getElementById('historyCoachSelect');
+  sel.innerHTML = '<option value="">── 全コーチ ──</option>';
+  coaches.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.text = `${c.code_id} ${c.name}`;
+    sel.add(opt);
+  });
+
+  // 2) ドロップダウンの change イベントで再読み込み
+  sel.onchange = () => loadHistory(); // 自身を再呼び出し
+
+  // 3) header に現在担当コーチを出す（任意）
+  document.getElementById('historyHeader').textContent = 
+    `現在担当コーチ: ${coaches.find(c=>c.id===currentCoachId)?.code_id+' '+coaches.find(c=>c.id===currentCoachId)?.name || '未設定'}`;
+
+  // 4) 履歴取得
+  const params = new URLSearchParams({ userId });
+  if (sel.value) params.append('coachId', sel.value);
+  const data = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
+
+  // 5) 表示
+  const listEl = document.getElementById('historyList');
+  listEl.innerHTML = '';
+  data.forEach(msg => {
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'text-center text-muted small mb-1';
+    timeDiv.textContent = new Date(msg.created_at).toLocaleString();
+    listEl.appendChild(timeDiv);
+
+    const bubble = document.createElement('div');
+    bubble.className = msg.role === 'user' ? 'user-message' : 'ai-message';
+    bubble.innerHTML = `<span>${msg.content}</span>`;
+    listEl.appendChild(bubble);
+  });
+
+  document.getElementById('history-area').style.display = 'block';
 }
   </script>
 </body>
