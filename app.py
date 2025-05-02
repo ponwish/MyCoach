@@ -2,7 +2,7 @@ import os
 import json
 import uuid
 from datetime import datetime
-from flask import Flask, request, jsonify, session, abort, send_from_directory
+from flask import Flask, request, jsonify, session, abort, send_from_directory, make_response
 from flask_cors import CORS
 from openai import OpenAI
 from supabase import create_client, Client
@@ -148,20 +148,39 @@ def handle_goal():
         import traceback; traceback.print_exc()
         return jsonify({'message': 'サーバエラーが発生しました', 'error': str(e)}), 500
 
+# 目標取得用エンドポイント
+@app.route('/user/goal', methods=['GET'])
+def get_user_goal():
+    user_id = request.args.get('userId','')
+    goals = load_json(GOALS_FILE)
+    goal = goals.get(user_id)
+    if goal:
+        return jsonify({'goal': goal})
+    else:
+        return jsonify({'goal': None}), 404
+    
 @app.route('/talk', methods=['POST'])
 def handle_talk():
     try:
         data = request.json
-        user_id = data.get('userId', '')
-        user_message = data.get('message', '')
-        if not user_message:
-            return jsonify({'message': 'メッセージが入力されていません'}), 400
-        # クライアントの担当コーチ取得
+        user_id = data.get('userId','')
+        user_message = data.get('message','')
+        # 1) 目標チェック
+        goals = load_json(GOALS_FILE)
+        if not goals.get(user_id):
+            return jsonify({
+                'message': 'まず、あなたの「目標」を設定してください！',
+                'requireGoal': True
+            }), 400
+        # 2) コーチチェック
         map_res = supabase.table('coach_client_map') \
-            .select('coach_id') \
-            .eq('client_id', user_id) \
-            .single().execute()
+            .select('coach_id').eq('client_id', user_id).single().execute()
         coach_id = map_res.data['coach_id'] if map_res.data else None
+        if not coach_id:
+            return jsonify({
+                'message': 'まず、担当コーチを選択してください！',
+                'requireCoach': True
+            }), 400
         # プロファイル取得
         prof_res = supabase.table('profiles') \
             .select('*') \
