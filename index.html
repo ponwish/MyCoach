@@ -37,6 +37,10 @@
       max-height: 300px; overflow-y: auto; padding: 10px;
       background: #f9f9f9; border-radius: 8px; margin-bottom: 15px;
     }
+    /* 履歴画面専用: 高さ2倍 */
+    #historyList.chat-container {
+      max-height: 600px;
+    }
     .user-message { text-align: right; margin: 5px 0; }
     .user-message span {
       background: #3399ff; color: #fff; padding: 8px;
@@ -100,11 +104,10 @@
   <script>
     const API_BASE_URL = 'https://mycoach.onrender.com';
     let userId = '';
+    let suggestionsShown = false;
     const suggestionTexts = [
-      '最近の気分はどうですか？',
-      '今日の目標は何ですか？',
-      'チャレンジしたいことは？',
-      '何でも相談してください'
+      '目標を確認したい',
+      'モチベーションが下がってきた'
     ];
 
     // 初期化
@@ -131,7 +134,14 @@
     }
     function showSection(section) {
       hideAll();
-      if (section === 'chat') { document.getElementById('chat-area').style.display = 'block'; renderSuggestions(); }
+      if (section === 'chat') {
+        document.getElementById('chat-area').style.display = 'block';
+        if (!suggestionsShown) {
+          renderSuggestions(); suggestionsShown = true;
+        } else {
+          document.getElementById('suggestions').style.display = 'none';
+        }
+      }
       if (section === 'coach') loadCoachChange();
       if (section === 'history') loadHistory();
     }
@@ -147,6 +157,8 @@
     }
 
     function sendTalk() {
+      // チップ非表示
+      document.getElementById('suggestions').style.display = 'none';
       const msg = document.getElementById('talkInput').value; if (!msg) return;
       const chat = document.getElementById('chat');
       const userDiv = document.createElement('div'); userDiv.className = 'user-message'; userDiv.innerHTML = `<span>${msg}</span>`;
@@ -160,74 +172,40 @@
 
     async function loadCoachChange() {
       hideAll();
-      let mapping;
-      try { mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.ok ? r.json() : Promise.reject()); }
-      catch { mapping = null; }
+      let mapping; try { mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.ok ? r.json() : Promise.reject()); } catch { mapping = null; }
       const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
       const sel = document.getElementById('coachSelect'); sel.innerHTML = '<option value="">-- 選択してください --</option>';
-      coaches.forEach(c => {
-        const opt = document.createElement('option'); opt.value = c.id; opt.text = `${c.code_id} ${c.name}`;
-        if (mapping && mapping.coachId === c.id) opt.selected = true;
-        sel.appendChild(opt);
-      });
+      coaches.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.text = `${c.code_id} ${c.name}`; if (mapping && mapping.coachId === c.id) opt.selected = true; sel.appendChild(opt); });
       document.getElementById('coach-select-area').style.display = 'block';
     }
 
     function confirmCoach() {
-      const coachId = document.getElementById('coachSelect').value;
-      if (!coachId) return alert('コーチを選択してください');
+      const coachId = document.getElementById('coachSelect').value; if (!coachId) return alert('コーチを選択してください');
       fetch(`${API_BASE_URL}/user/assign_coach`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, coachId })})
         .then(res => res.ok && showSection('coach'));
     }
 
-    let cachedCoaches = null;
-    
-    // 履歴表示機能
     async function loadHistory() {
       hideAll();
       const filterSel = document.getElementById('historyFilterSelect');
-      // 初回のみフィルタの選択肢を構築
-      if (!cachedCoaches) {
-        try {
-          cachedCoaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
-        } catch {
-          cachedCoaches = [];
-        }
+      let coaches;
+      if (!filterSel.options.length || filterSel.options.length === 1) {
+        coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
         filterSel.innerHTML = '<option value="">── 全コーチ ──</option>';
-        cachedCoaches.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c.id;
-          opt.text = `${c.code_id} ${c.name}`;
-          filterSel.appendChild(opt);
-        });
-        // 選択変更時に再読み込み
+        coaches.forEach(c => filterSel.appendChild(new Option(`${c.code_id} ${c.name}`, c.id)));
         filterSel.addEventListener('change', loadHistory);
       }
-      // クエリパラメータ設定
       const params = new URLSearchParams({ userId });
       if (filterSel.value) params.append('coachId', filterSel.value);
-      let data = [];
-      try {
-        data = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
-      } catch {
-        alert('履歴の取得に失敗しました');
-      }
-      // 表示
-      const listEl = document.getElementById('historyList');
-      listEl.innerHTML = '';
+      const data = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
+      const listEl = document.getElementById('historyList'); listEl.innerHTML = '';
       data.forEach(msg => {
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'text-center text-muted small mb-1';
-        timeDiv.textContent = new Date(msg.created_at).toLocaleString('ja-JP', {
-          year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
-        });
+        const timeDiv = document.createElement('div'); timeDiv.className = 'text-center text-muted small mb-1';
+        timeDiv.textContent = new Date(msg.created_at).toLocaleString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
         listEl.appendChild(timeDiv);
-        const bubble = document.createElement('div');
-        bubble.className = msg.role === 'user' ? 'user-message' : 'ai-message';
-        bubble.innerHTML = `<span>${msg.content}</span>`;
+        const bubble = document.createElement('div'); bubble.className = msg.role==='user'?'user-message':'ai-message'; bubble.innerHTML = `<span>${msg.content}</span>`;
         listEl.appendChild(bubble);
       });
-      // 履歴画面表示
       document.getElementById('history-area').style.display = 'block';
     }
   </script>
