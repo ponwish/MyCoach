@@ -124,7 +124,7 @@ def handle_talk():
     except APIError:
         return jsonify({'message': '担当コーチを選択してください', 'requireCoach': True}), 400
     # fetch chat history
-    history_resp = supabase.table('chat_history').select('role, content, created_at').eq('user_id', user_id).eq('coach_id', coach_id).order('created_at', asc=True).execute()
+    history_resp = supabase.table('chat_history').select('role, content, created_at').eq('user_id', user_id).eq('coach_id', coach_id).order('created_at', ascending=True).execute()
     history = history_resp.data or []
     # fetch coach profile
     profile_resp = supabase.table('profiles').select('*').eq('id', coach_id).single().execute()
