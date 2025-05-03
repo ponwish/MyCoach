@@ -4,7 +4,6 @@ from openai import OpenAI
 from supabase import create_client
 from postgrest.exceptions import APIError
 import os
-import requests
 import uuid
 from datetime import datetime
 
@@ -22,38 +21,25 @@ CORS(
 )
 
 # OpenAI client
-oai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Supabase setup
+# Supabase setup (backend uses service role key to bypass RLS)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-# Use service role key in backend to bypass RLS
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # ------------------------------------
-# Utility functions
-def load_json(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    else:
-        return {}
+# Goals endpoints
 
-# ------------------------------------
-# Goal endpoints
 def upsert_user_goal(user_id, goal_text):
-    try:
-        supabase.table('user_goals').upsert(
-            {
-                'user_id': user_id,
-                'goal': goal_text,
-                'updated_at': datetime.utcnow().isoformat()
-            },
-            ['user_id']
-        ).execute()
-    except APIError as e:
-        app.logger.error(f"Upsert error: {e}")
-        raise
+    supabase.table('user_goals').upsert(
+        {
+            'user_id': user_id,
+            'goal': goal_text,
+            'updated_at': datetime.utcnow().isoformat()
+        },
+        ['user_id']
+    ).execute()
 
 @app.route('/goal', methods=['POST'])
 def handle_goal():
@@ -64,11 +50,12 @@ def handle_goal():
         return jsonify({'message': '目標が入力されていません'}), 400
     try:
         upsert_user_goal(user_id, goal_text)
-    except Exception:
+    except APIError as e:
+        app.logger.error(f"Goal upsert error: {e}")
         return jsonify({'message': 'DBエラーが発生しました'}), 500
 
     prompt = f"あなたの目標は「{goal_text}」です。最初の具体的なアドバイスを1つ提案してください。"
-    response = oai_client.chat.completions.create(
+    response = openai_client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "あなたはプロフェッショナルなコーチです。"},
@@ -83,36 +70,36 @@ def handle_goal():
 def get_user_goal():
     user_id = request.args.get('userId', '')
     try:
-        resp = supabase.table('user_goals')\
-            .select('goal')\
-            .eq('user_id', user_id)\
-            .single()\
+        resp = supabase.table('user_goals') \
+            .select('goal') \
+            .eq('user_id', user_id) \
+            .single() \
             .execute()
         return jsonify({'goal': resp.data['goal']}), 200
     except APIError:
         return jsonify({'goal': None}), 404
 
 # ------------------------------------
-# Coach assignment endpoints
+# Coach mapping endpoints
+
 @app.route('/user/coach', methods=['GET'])
 def get_user_coach():
     user_id = request.args.get('userId', '')
-    # fetch mapping from coach_client_map
-    resp = supabase.table('coach_client_map')\
-        .select('coach_id')\
-        .eq('client_id', user_id)\
-        .single()\
-        .execute()
-    if resp.error or not resp.data:
+    try:
+        resp = supabase.table('coach_client_map') \
+            .select('coach_id') \
+            .eq('client_id', user_id) \
+            .single() \
+            .execute()
+        return jsonify({'coachId': resp.data['coach_id']}), 200
+    except APIError:
         return jsonify({'coachId': None}), 404
-    return jsonify({'coachId': resp.data['coach_id']}), 200
 
 @app.route('/user/assign_coach', methods=['POST'])
 def assign_coach():
     data = request.json
-    user_id = data.get('userId')
-    coach_id = data.get('coachId')
-    # upsert mapping
+    user_id = data.get('userId', '')
+    coach_id = data.get('coachId', '')
     try:
         supabase.table('coach_client_map').upsert(
             {
@@ -122,12 +109,25 @@ def assign_coach():
             },
             ['client_id']
         ).execute()
-    except APIError:
+    except APIError as e:
+        app.logger.error(f"Assign coach error: {e}")
         return jsonify({'message': 'DBエラー'}), 500
-    return jsonify({'message': 'OK'})
+    return jsonify({'message': 'OK'}), 200
+
+@app.route('/coaches', methods=['GET'])
+def list_coaches():
+    try:
+        resp = supabase.table('profiles') \
+            .select('id, code_id, name') \
+            .execute()
+        return jsonify(resp.data), 200
+    except APIError as e:
+        app.logger.error(f"Fetch coaches error: {e}")
+        return jsonify([]), 500
 
 # ------------------------------------
 # Chat endpoints
+
 @app.route('/talk', methods=['POST'])
 def handle_talk():
     data = request.json
@@ -136,23 +136,29 @@ def handle_talk():
 
     # check goal
     try:
-        g = supabase.table('user_goals').select('goal').eq('user_id', user_id).single().execute()
+        supabase.table('user_goals').select('goal').eq('user_id', user_id).single().execute()
     except APIError:
         return jsonify({'message': '目標を設定してください', 'requireGoal': True}), 400
 
     # check coach
     try:
-        m = supabase.table('coach_client_map').select('coach_id').eq('client_id', user_id).single().execute()
-        coach_id = m.data['coach_id']
+        resp = supabase.table('coach_client_map') \
+            .select('coach_id') \
+            .eq('client_id', user_id) \
+            .single() \
+            .execute()
+        coach_id = resp.data['coach_id']
     except APIError:
         return jsonify({'message': '担当コーチを選択してください', 'requireCoach': True}), 400
 
-    # fetch chat history and profile omitted for brevity...
-    # generate AI response and save to chat_history
-    return jsonify({'message': 'AIの応答'})
+    # TODO: Fetch chat history and coach profile, generate AI response, save to chat_history
+
+    # Placeholder response
+    return jsonify({'message': 'AIの応答'}), 200
 
 # ------------------------------------
 # Main
+
 if __name__ == "__main__":
     from os import environ
     port = int(environ.get("PORT", 5000))
