@@ -152,7 +152,7 @@ def get_history():
     query = supabase.table('chat_history').select('role,content,created_at').eq('user_id', user_id)
     if coach_id:
         query = query.eq('coach_id', coach_id)
-    history_resp = query.order('created_at', asc=True).execute()
+    history_resp = query.order('created_at', ascending=True).execute()
     return jsonify(history_resp.data or []), 200
 
 # ------------------------------------
