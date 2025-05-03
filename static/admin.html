@@ -66,123 +66,117 @@
 </div>
 
 <script>
-function adminLogin() {
-  const adminId = document.getElementById('adminId').value;
-  const adminPassword = document.getElementById('adminPassword').value;
-  fetch('/admin/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ admin_id: adminId, admin_password: adminPassword })
-  })
-  .then(res => {
-    if (res.ok) {
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('admin-area').style.display = 'block';
-      fetchProfiles();
-    } else {
-      alert('ログイン失敗');
-    }
-  });
-}
+  const API_BASE = 'https://mycoach.onrender.com';
 
-function fetchProfiles() {
-  fetch('/admin/profiles', { credentials: 'include' })
-    .then(res => res.json())
-    .then(data => {
-      const list = document.getElementById('profile-list');
-      list.innerHTML = data.map(p => `
-        <div class="card p-2 mb-2" onclick="showEditForm('${p.id}')">
-          <div><strong>コーチID:</strong> ${p.code_id || ''}</div>
-          <div><strong>名前:</strong> ${p.name || ''}</div>
-          <div><strong>ステータス:</strong> <span class="status-${p.availability_status}">${p.availability_status ? '受付中' : '受付停止中'}</span></div>
-        </div>
-      `).join('');
+  function adminLogin() {
+    const adminId = document.getElementById('adminId').value;
+    const adminPassword = document.getElementById('adminPassword').value;
+    fetch(`${API_BASE}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ admin_id: adminId, admin_password: adminPassword })
+    })
+    .then(res => {
+      if (res.ok) {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('admin-area').style.display = 'block';
+        fetchProfiles();
+      } else {
+        alert('ログイン失敗');
+      }
     });
-}
+  }
 
-function showEditForm(id) {
-  fetch('/admin/profiles', { credentials: 'include' })
-    .then(res => res.json())
-    .then(data => {
-      const p = data.find(x => x.id === id);
-      document.getElementById('editId').value = p.id;
-      document.getElementById('editCodeId').textContent = p.code_id;
-      document.getElementById('editStatus').textContent = p.availability_status ? '受付中' : '受付停止中';
-      document.getElementById('editName').value = p.name || '';
-      document.getElementById('editAge').value = p.age || '';
-      document.getElementById('editGender').value = p.gender || '';
-      document.getElementById('editJob').value = p.job || '';
-      document.getElementById('editBackground').value = p.background || '';
-      document.getElementById('editCertifications').value = p.certifications || '';
-      document.getElementById('editVision').value = p.vision || '';
-      document.getElementById('editForm').style.display = 'block';
+  function fetchProfiles() {
+    fetch(`${API_BASE}/admin/profiles`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('profile-list');
+        list.innerHTML = data.map(p => `
+          <div class="card p-2 mb-2" onclick="showEditForm('${p.id}')">
+            <div><strong>コーチID:</strong> ${p.code_id || ''}</div>
+            <div><strong>名前:</strong> ${p.name || ''}</div>
+            <div><strong>ステータス:</strong> <span class="status-${p.availability_status}">${p.availability_status ? '受付中' : '受付停止中'}</span></div>
+          </div>
+        `).join('');
+      });
+  }
+
+  function showEditForm(id) {
+    fetch(`${API_BASE}/admin/profiles`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        const p = data.find(x => x.id === id);
+        document.getElementById('editId').value = p.id;
+        document.getElementById('editCodeId').textContent = p.code_id;
+        document.getElementById('editStatus').textContent = p.availability_status ? '受付中' : '受付停止中';
+        document.getElementById('editName').value = p.name || '';
+        document.getElementById('editAge').value = p.age || '';
+        document.getElementById('editGender').value = p.gender || '';
+        document.getElementById('editJob').value = p.job || '';
+        document.getElementById('editBackground').value = p.background || '';
+        document.getElementById('editCertifications').value = p.certifications || '';
+        document.getElementById('editVision').value = p.vision || '';
+        document.getElementById('editForm').style.display = 'block';
+      });
+  }
+
+  function createProfile() {
+    const payload = {
+      name: document.getElementById('newName').value,
+      age: parseInt(document.getElementById('newAge').value),
+      gender: document.getElementById('newGender').value,
+      job: document.getElementById('newJob').value,
+      background: document.getElementById('newBackground').value,
+      certifications: document.getElementById('newCertifications').value,
+      vision: document.getElementById('newVision').value
+    };
+    fetch(`${API_BASE}/admin/profiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    })
+    .then(res => {
+      if (res.ok) fetchProfiles(); else alert('追加失敗');
     });
-}
+  }
 
-function createProfile() {
-  const payload = {
-    name: document.getElementById('newName').value,
-    age: parseInt(document.getElementById('newAge').value),
-    gender: document.getElementById('newGender').value,
-    job: document.getElementById('newJob').value,
-    background: document.getElementById('newBackground').value,
-    certifications: document.getElementById('newCertifications').value,
-    vision: document.getElementById('newVision').value
-  };
-  fetch('/admin/profiles', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  })
-  .then(res => {
-    if (res.ok) fetchProfiles();
-    else alert('追加失敗');
-  });
-}
+  function updateProfile() {
+    const id = document.getElementById('editId').value;
+    const payload = {
+      name: document.getElementById('editName').value,
+      age: parseInt(document.getElementById('editAge').value),
+      gender: document.getElementById('editGender').value,
+      job: document.getElementById('editJob').value,
+      background: document.getElementById('editBackground').value,
+      certifications: document.getElementById('editCertifications').value,
+      vision: document.getElementById('editVision').value
+    };
+    fetch(`${API_BASE}/admin/profiles/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    })
+    .then(res => {
+      if (res.ok) { fetchProfiles(); document.getElementById('editForm').style.display = 'none'; } else alert('更新失敗');
+    });
+  }
 
-function updateProfile() {
-  const id = document.getElementById('editId').value;
-  const payload = {
-    name: document.getElementById('editName').value,
-    age: parseInt(document.getElementById('editAge').value),
-    gender: document.getElementById('editGender').value,
-    job: document.getElementById('editJob').value,
-    background: document.getElementById('editBackground').value,
-    certifications: document.getElementById('editCertifications').value,
-    vision: document.getElementById('editVision').value
-  };
-  fetch(`/admin/profiles/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  })
-  .then(res => {
-    if (res.ok) {
-      fetchProfiles();
-      document.getElementById('editForm').style.display = 'none';
-    } else alert('更新失敗');
-  });
-}
-
-function softDeleteProfile() {
-  const id = document.getElementById('editId').value;
-  const payload = { availability_status: false };
-  fetch(`/admin/profiles/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  })
-  .then(res => {
-    if (res.ok) {
-      fetchProfiles();
-      document.getElementById('editForm').style.display = 'none';
-    } else alert('ステータス変更失敗');
-  });
-}
+  function softDeleteProfile() {
+    const id = document.getElementById('editId').value;
+    fetch(`${API_BASE}/admin/profiles/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ availability_status: false })
+    })
+    .then(res => {
+      if (res.ok) { fetchProfiles(); document.getElementById('editForm').style.display = 'none'; } else alert('ステータス変更失敗');
+    });
+  }
 </script>
 
 </body>
