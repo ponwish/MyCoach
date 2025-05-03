@@ -30,8 +30,8 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Supabaseクライアント
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")   # anon キー
-supabase_anon = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase_anon = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # 目標データ保存用
 GOALS_FILE = "goals.json"
