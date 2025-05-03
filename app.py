@@ -7,6 +7,7 @@ from flask_cors import CORS
 from openai import OpenAI
 from supabase import create_client, Client
 import requests
+from postgrest.exceptions import APIError
 
 # Flaskアプリ初期化
 app = Flask(__name__, static_folder="static")
@@ -133,15 +134,15 @@ def handle_goal():
             return jsonify({'message': '目標が入力されていません'}), 400
 
         # upsert user_goals
-        resp = supabase_anon.table('user_goals').upsert({
-            'user_id': user_id,
-            'goal': goal_text,
-            'updated_at': datetime.utcnow().isoformat()
-        }, on_conflict='user_id').execute()
-
-        if resp.error:
-            return jsonify({'message': 'DBエラー', 'error': resp.error.message}), 500
-
+        try:
+            supabase_anon.table('user_goals').upsert(
+                {'user_id': user_id, 'goal': goal_text, 'updated_at': datetime.utcnow().isoformat()},
+                ['user_id']
+            ).execute()
+        except APIError as e:
+            app.logger.error(f"Upsert error: {e}")
+            return jsonify({'message': 'DBエラーが発生しました'}), 500
+        
         # コーチングメッセージ生成はこれまで通り
         prompt = f"目標: {goal_text} に対して最初のアドバイスを1つだけ提案してください。"
         response = client.chat.completions.create(
@@ -162,17 +163,17 @@ def handle_goal():
 @app.route('/user/goal', methods=['GET'])
 def get_user_goal():
     user_id = request.args.get('userId', '')
-    resp = supabase_anon.table('user_goals') \
-        .select('goal') \
-        .eq('user_id', user_id) \
-        .single() \
-        .execute()
-
-    if resp.error:
+    try:
+        resp = supabase_anon.table('user_goals') \
+            .select('goal') \
+            .eq('user_id', user_id) \
+            .single() \
+            .execute()
+        # 行がなければ 404
+        return jsonify({'goal': resp.data['goal']}), 200
+    except APIError as e:
+        # APIError: no rows returned
         return jsonify({'goal': None}), 404
-
-    goal = resp.data.get('goal')
-    return jsonify({'goal': goal})
 
     
 @app.route('/talk', methods=['POST'])
