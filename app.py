@@ -4,7 +4,6 @@ from openai import OpenAI
 from supabase import create_client
 from postgrest.exceptions import APIError
 import os
-import requests
 import uuid
 from datetime import datetime
 
@@ -33,11 +32,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 # Goals endpoints
 def upsert_user_goal(user_id, goal_text):
     supabase.table('user_goals').upsert(
-        {
-            'user_id': user_id,
-            'goal': goal_text,
-            'updated_at': datetime.utcnow().isoformat()
-        },
+        {'user_id': user_id, 'goal': goal_text, 'updated_at': datetime.utcnow().isoformat()},
         ['user_id']
     ).execute()
 
@@ -53,7 +48,6 @@ def handle_goal():
     except APIError as e:
         app.logger.error(f"Goal upsert error: {e}")
         return jsonify({'message': 'DBエラーが発生しました'}), 500
-
     prompt = f"あなたの目標は「{goal_text}」です。最初の具体的なアドバイスを1つ提案してください。"
     response = oai_client.chat.completions.create(
         model="gpt-4o",
@@ -70,11 +64,7 @@ def handle_goal():
 def get_user_goal():
     user_id = request.args.get('userId', '')
     try:
-        resp = supabase.table('user_goals') \
-            .select('goal') \
-            .eq('user_id', user_id) \
-            .single() \
-            .execute()
+        resp = supabase.table('user_goals').select('goal').eq('user_id', user_id).single().execute()
         return jsonify({'goal': resp.data['goal']}), 200
     except APIError:
         return jsonify({'goal': None}), 404
@@ -85,11 +75,7 @@ def get_user_goal():
 def get_user_coach():
     user_id = request.args.get('userId', '')
     try:
-        resp = supabase.table('coach_client_map') \
-            .select('coach_id') \
-            .eq('client_id', user_id) \
-            .single() \
-            .execute()
+        resp = supabase.table('coach_client_map').select('coach_id').eq('client_id', user_id).single().execute()
         return jsonify({'coachId': resp.data['coach_id']}), 200
     except APIError:
         return jsonify({'coachId': None}), 404
@@ -101,11 +87,7 @@ def assign_coach():
     coach_id = data.get('coachId', '')
     try:
         supabase.table('coach_client_map').upsert(
-            {
-                'client_id': user_id,
-                'coach_id': coach_id,
-                'updated_at': datetime.utcnow().isoformat()
-            },
+            {'client_id': user_id, 'coach_id': coach_id, 'updated_at': datetime.utcnow().isoformat()},
             ['client_id']
         ).execute()
     except APIError as e:
@@ -116,9 +98,7 @@ def assign_coach():
 @app.route('/coaches', methods=['GET'])
 def list_coaches():
     try:
-        resp = supabase.table('profiles') \
-            .select('id, code_id, name') \
-            .execute()
+        resp = supabase.table('profiles').select('id, code_id, name').execute()
         return jsonify(resp.data), 200
     except APIError as e:
         app.logger.error(f"Fetch coaches error: {e}")
@@ -131,58 +111,49 @@ def handle_talk():
     data = request.json
     user_id = data.get('userId', '')
     user_message = data.get('message', '')
-
     # check goal
     try:
         goal_resp = supabase.table('user_goals').select('goal').eq('user_id', user_id).single().execute()
         user_goal = goal_resp.data['goal']
     except APIError:
         return jsonify({'message': '目標を設定してください', 'requireGoal': True}), 400
-
     # check coach
     try:
         coach_resp = supabase.table('coach_client_map').select('coach_id').eq('client_id', user_id).single().execute()
         coach_id = coach_resp.data['coach_id']
     except APIError:
         return jsonify({'message': '担当コーチを選択してください', 'requireCoach': True}), 400
-
     # fetch chat history
-    history_resp = supabase.table('chat_history') \
-        .select('role, content') \
-        .eq('user_id', user_id) \
-        .eq('coach_id', coach_id) \
-        .order('created_at', desc=False) \
-        .execute()
+    history_resp = supabase.table('chat_history').select('role, content, created_at').eq('user_id', user_id).eq('coach_id', coach_id).order('created_at', asc=True).execute()
     history = history_resp.data or []
-
     # fetch coach profile
     profile_resp = supabase.table('profiles').select('*').eq('id', coach_id).single().execute()
     profile = profile_resp.data
     profile_text = f"年齢: {profile.get('age','')}歳, 性別: {profile.get('gender','')}, 職業: {profile.get('job','')}, 経歴: {profile.get('background','')}, 資格: {profile.get('certifications','')}, ビジョン: {profile.get('vision','')}"
-
-    # build messages for OpenAI
-    messages = [
-        {"role": "system", "content": f"あなたは以下の人物になりきってコーチングを行ってください。\n\n{profile_text}\n\nクライアントの目標は「{user_goal}」です。過去の会話履歴も踏まえ、前向きで具体的なアドバイスを1つだけ提案してください。"}
-    ]
+    # build messages
+    messages = [{"role":"system","content":f"あなたは以下の人物になりきってコーチングを行ってください。\n\n{profile_text}\n\nクライアントの目標は「{user_goal}」です。過去の会話履歴も踏まえ、前向きで具体的なアドバイスを1つだけ提案してください。"}]
     for msg in history:
         messages.append({"role": msg['role'], "content": msg['content']})
     messages.append({"role": "user", "content": user_message})
-
     # call OpenAI
-    ai_resp = oai_client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        temperature=0.7,
-    )
+    ai_resp = oai_client.chat.completions.create(model="gpt-4o", messages=messages, temperature=0.7)
     ai_message = ai_resp.choices[0].message.content.strip()
-
-    # save to chat_history
+    # save history
     supabase.table('chat_history').insert([
         {"user_id": user_id, "coach_id": coach_id, "role": "user", "content": user_message, "created_at": datetime.utcnow().isoformat()},
         {"user_id": user_id, "coach_id": coach_id, "role": "assistant", "content": ai_message, "created_at": datetime.utcnow().isoformat()}
     ]).execute()
-
     return jsonify({'message': ai_message}), 200
+
+@app.route('/user/history', methods=['GET'])
+def get_history():
+    user_id = request.args.get('userId', '')
+    coach_id = request.args.get('coachId')
+    query = supabase.table('chat_history').select('role,content,created_at').eq('user_id', user_id)
+    if coach_id:
+        query = query.eq('coach_id', coach_id)
+    history_resp = query.order('created_at', asc=True).execute()
+    return jsonify(history_resp.data or []), 200
 
 # ------------------------------------
 # Main
