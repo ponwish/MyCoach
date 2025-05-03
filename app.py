@@ -30,8 +30,8 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Supabaseクライアント
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")   # anon キー
+supabase_anon = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # 目標データ保存用
 GOALS_FILE = "goals.json"
@@ -126,14 +126,24 @@ def assign_coach():
 def handle_goal():
     try:
         data = request.json
-        user_id = data.get('userId', '')
-        goal = data.get('goal', '')
-        if not goal:
+        user_id = data.get('userId')
+        goal_text = data.get('goal', '').strip()
+
+        if not goal_text:
             return jsonify({'message': '目標が入力されていません'}), 400
-        goals_data = load_json(GOALS_FILE)
-        goals_data[user_id] = goal
-        save_json(GOALS_FILE, goals_data)
-        prompt = f"""あなたは優秀なコーチです。目標: {goal}"""
+
+        # upsert user_goals
+        resp = supabase_anon.table('user_goals').upsert({
+            'user_id': user_id,
+            'goal': goal_text,
+            'updated_at': datetime.utcnow().isoformat()
+        }, on_conflict='user_id').execute()
+
+        if resp.error:
+            return jsonify({'message': 'DBエラー', 'error': resp.error.message}), 500
+
+        # コーチングメッセージ生成はこれまで通り
+        prompt = f"目標: {goal_text} に対して最初のアドバイスを1つだけ提案してください。"
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -142,8 +152,8 @@ def handle_goal():
             ],
             temperature=0.7,
         )
-        coaching_message = response.choices[0].message.content.strip()
-        return jsonify({'message': coaching_message})
+        msg = response.choices[0].message.content.strip()
+        return jsonify({'message': msg})
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({'message': 'サーバエラーが発生しました', 'error': str(e)}), 500
@@ -151,13 +161,19 @@ def handle_goal():
 # 目標取得用エンドポイント
 @app.route('/user/goal', methods=['GET'])
 def get_user_goal():
-    user_id = request.args.get('userId','')
-    goals = load_json(GOALS_FILE)
-    goal = goals.get(user_id)
-    if goal:
-        return jsonify({'goal': goal})
-    else:
+    user_id = request.args.get('userId', '')
+    resp = supabase_anon.table('user_goals') \
+        .select('goal') \
+        .eq('user_id', user_id) \
+        .single() \
+        .execute()
+
+    if resp.error:
         return jsonify({'goal': None}), 404
+
+    goal = resp.data.get('goal')
+    return jsonify({'goal': goal})
+
     
 @app.route('/talk', methods=['POST'])
 def handle_talk():
