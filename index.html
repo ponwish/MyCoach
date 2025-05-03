@@ -54,16 +54,15 @@
       overflow: hidden;
       z-index: 999;
     }
+    #menu ul { padding: 0; margin: 0; list-style: none; }
     #menu li {
-      list-style: none;
       padding: 12px 20px;
       cursor: pointer;
       font-weight: 500;
       transition: background 0.2s;
     }
-    #menu li:hover {
-      background: #f1f1f1;
-    }
+    #menu li:hover { background: #f1f1f1; }
+
     main {
       padding-top: 80px;
       display: flex;
@@ -160,11 +159,10 @@
       font-size: 0.85rem;
       transition: background 0.2s;
     }
-    #suggestions .btn-light:hover {
-      background: #f0f0f0;
-    }
+    #suggestions .btn-light:hover { background: #f0f0f0; }
     /* フォーム */
     input, select {
+      width: 100%;
       padding: 12px;
       border-radius: 8px;
       border: 1px solid #ccc;
@@ -182,6 +180,7 @@
     <h1>AIコーチング 2025</h1>
     <button id="hamburger">☰</button>
   </header>
+
   <div id="menu">
     <ul>
       <li onclick="navigate('chat')">トーク</li>
@@ -189,6 +188,7 @@
       <li onclick="navigate('history')">履歴</li>
     </ul>
   </div>
+
   <main>
     <!-- 目標入力 -->
     <div class="card" id="goal-area" style="display:none;">
@@ -196,6 +196,7 @@
       <input type="text" id="goalInput" placeholder="例：TOEIC 900点を目指す" />
       <button class="btn btn-success" onclick="submitGoal()">目標を設定</button>
     </div>
+
     <!-- トーク -->
     <div class="card" id="chat-area" style="display:none;">
       <div id="suggestions"></div>
@@ -203,6 +204,7 @@
       <input type="text" id="talkInput" placeholder="メッセージを入力..." />
       <button class="btn btn-primary" onclick="sendTalk()">送信</button>
     </div>
+
     <!-- コーチ選択 -->
     <div class="card" id="coach-select-area" style="display:none;">
       <h4>担当コーチを選択</h4>
@@ -211,6 +213,7 @@
       </select>
       <button class="btn btn-success" onclick="confirmCoach()">確定</button>
     </div>
+
     <!-- 履歴 -->
     <div class="card" id="history-area" style="display:none;">
       <h4>トーク履歴</h4>
@@ -220,6 +223,7 @@
       <div id="historyList" class="chat-container"></div>
     </div>
   </main>
+
   <script>
     const API_BASE_URL = 'https://mycoach.onrender.com';
     let userId = '';
@@ -228,47 +232,109 @@
       '目標を確認したい',
       'モチベーションが下がってきた'
     ];
-    // LIFF init
+
+    // LIFF 初期化
     liff.init({ liffId: '2007334673-1dVleAwO' })
       .then(() => !liff.isLoggedIn() ? liff.login() : liff.getProfile())
       .then(profile => { userId = profile.userId; showSection('chat'); })
       .catch(() => showSection('chat'));
+
+    // ハンバーガーメニュー制御
     document.getElementById('hamburger').onclick = () => {
       const m = document.getElementById('menu');
       m.style.display = m.style.display === 'block' ? 'none' : 'block';
     };
     document.addEventListener('click', e => {
-      if (!e.target.closest('#menu') && e.target.id !== 'hamburger') document.getElementById('menu').style.display = 'none';
+      if (!e.target.closest('#menu') && e.target.id !== 'hamburger') {
+        document.getElementById('menu').style.display = 'none';
+      }
     });
-    function navigate(sec) { document.getElementById('menu').style.display='none'; showSection(sec); }
-    function hideAll() { ['goal-area','chat-area','coach-select-area','history-area'].forEach(id=>document.getElementById(id).style.display='none'); }
+
+    function navigate(sec) {
+      document.getElementById('menu').style.display = 'none';
+      showSection(sec);
+    }
+
+    function hideAll() {
+      ['goal-area','chat-area','coach-select-area','history-area'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+    }
+
     function showSection(sec) {
       hideAll();
-      if (sec==='chat') checkPrerequisites();
-      if (sec==='goal') document.getElementById('goal-area').style.display='block';
-      if (sec==='coach') loadCoachChange();
-      if (sec==='history') loadHistory();
+      if (sec === 'chat') checkPrerequisites();
+      if (sec === 'goal') document.getElementById('goal-area').style.display = 'block';
+      if (sec === 'coach') loadCoachChange();
+      if (sec === 'history') loadHistory();
     }
+
+    // 目標設定
     function submitGoal() {
-      const goal = document.getElementById('goalInput').value.trim(); if (!goal) return alert('目標を入力してください');
-      fetch(`${API_BASE_URL}/goal`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,goal})})
-        .then(r=>r.ok?showSection('coach'):alert('失敗'));
+      const goal = document.getElementById('goalInput').value.trim();
+      if (!goal) return alert('目標を入力してください');
+      fetch(`${API_BASE_URL}/goal`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ userId, goal })
+      }).then(r => r.ok ? showSection('coach') : alert('目標設定に失敗しました'));
     }
-    async function checkPrerequisites(){
-      if(!userId){try{const p=await liff.getProfile();userId=p.userId;}catch{}}
-      let hasGoal=true;try{await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`).then(r=>{if(!r.ok)throw''});}catch{hasGoal=false}
-      if(!hasGoal)return showSection('goal');
-      let hasCoach=true;try{await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r=>{if(!r.ok)throw''});}catch{hasCoach=false}
-      if(!hasCoach)return showSection('coach');
-      document.getElementById('chat-area').style.display='block';
-      const sug=document.getElementById('suggestions');
-      if(!suggestionsShown){renderSuggestions();sug.style.display='flex';suggestionsShown=true;}else{sug.style.display='none';}
+
+    // 前提条件チェック
+    async function checkPrerequisites() {
+      if (!userId) {
+        try { const p = await liff.getProfile(); userId = p.userId; } catch {}
+      }
+      // 目標確認
+      let hasGoal = true;
+      try { await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`).then(r => { if (!r.ok) throw ''; }); } catch { hasGoal = false; }
+      if (!hasGoal) return showSection('goal');
+      // コーチ確認
+      let hasCoach = true;
+      try { await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => { if (!r.ok) throw ''; }); } catch { hasCoach = false; }
+      if (!hasCoach) return showSection('coach');
+      // トーク画面
+      document.getElementById('chat-area').style.display = 'block';
+      const sug = document.getElementById('suggestions');
+      if (!suggestionsShown) { renderSuggestions(); sug.style.display = 'flex'; suggestionsShown = true; }
+      else { sug.style.display = 'none'; }
     }
-    function renderSuggestions(){const c=document.getElementById('suggestions');c.innerHTML='';suggestionTexts.forEach(t=>{const b=document.createElement('button');b.className='btn btn-light btn-sm';b.textContent=t;b.onclick=()=>{document.getElementById('talkInput').value=t;document.getElementById('talkInput').focus();};c.appendChild(b);});}
-    function sendTalk(){document.getElementById('suggestions').style.display='none';const m=document.getElementById('talkInput').value;if(!m)return;const chat=document.getElementById('chat');const u=document.createElement('div');u.className='user-message';u.innerHTML=`<span>${m}</span>`;chat.appendChild(u);document.getElementById('talkInput').value='';fetch(`${API_BASE_URL}/talk`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,message:m})}).then(r=>r.json()).then(d=>{if(d.requireGoal)return showSection('goal');if(d.requireCoach)return showSection('coach');const a=document.createElement('div');a.className='ai-message';a.innerHTML=`<span>${d.message}</span>`;chat.appendChild(a);chat.scrollTop=chat.scrollHeight;});}
-    async function loadCoachChange(){hideAll();let m;try{m=await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r=>r.ok?r.json():Promise.reject());}catch{m=null;}const cs=await fetch(`${API_BASE_URL}/coaches`).then(r=>r.json());const s=document.getElementById('coachSelect');s.innerHTML='<option value="">-- 選択してください --</option>';cs.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.text=`${c.code_id} ${c.name}`;if(m&&m.coachId===c.id)o.selected=true;s.appendChild(o);});document.getElementById('coach-select-area').style.display='block';}
-    function confirmCoach(){const i=document.getElementById('coachSelect').value;if(!i)return alert('選択してください');fetch(`${API_BASE_URL}/user/assign_coach`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,coachId:i})}).then(r=>r.ok&&showSection('chat'));}
-    async function loadHistory(){hideAll();const fs=document.getElementById('historyFilterSelect');let cs;if(!fs.options.length||fs.options.length===1){cs=await fetch(`${API_BASE_URL}/coaches`).then(r=>r.json());fs.innerHTML='<option value="">── 全コーチ ──</option>';cs.forEach(c=>fs.appendChild(new Option(`${c.code_id} ${c.name}`,c.id)));fs.addEventListener('change',loadHistory);}const p=new URLSearchParams({userId});if(fs.value)p.append('coachId',fs.value);const d=await fetch(`${API_BASE_URL}/user/history?${p}`).then(r=>r.json());const hl=document.getElementById('historyList');hl.innerHTML='';d.forEach(msg=>{const t=document.createElement('div');t.className='text-center text-muted small mb-1';t.textContent=new Date(msg.created_at).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});hl.appendChild(t);const b=document.createElement('div');b.className=msg.role==='user'?'user-message':'ai-message';b.innerHTML=`<span>${msg.content}</span>`;hl.appendChild(b);});document.getElementById('history-area').style.display='block';}
-  </script>
-</body>
-</html>
+
+    // サジェッションチップ
+    function renderSuggestions() {
+      const c = document.getElementById('suggestions'); c.innerHTML = ''; 
+      suggestionTexts.forEach(text => {
+        const btn = document.createElement('button'); btn.className = 'btn btn-light btn-sm'; btn.textContent = text;
+        btn.onclick = () => { document.getElementById('talkInput').value = text; document.getElementById('talkInput').focus(); };
+        c.appendChild(btn);
+      });
+    }
+
+    // トーク送信
+    function sendTalk() {
+      document.getElementById('suggestions').style.display = 'none';
+      const msg = document.getElementById('talkInput').value; if (!msg) return;
+      const chat = document.getElementById('chat');
+      const userDiv = document.createElement('div'); userDiv.className = 'user-message'; userDiv.innerHTML = `<span>${msg}</span>`;
+      chat.appendChild(userDiv); document.getElementById('talkInput').value = '';
+      fetch(`${API_BASE_URL}/talk`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, message: msg })})
+        .then(res => res.json()).then(data => {
+          if (data.requireGoal) return showSection('goal');
+          if (data.requireCoach) return showSection('coach');
+          const aiDiv = document.createElement('div'); aiDiv.className = 'ai-message'; aiDiv.innerHTML = `<span>${data.message}</span>`;
+          chat.appendChild(aiDiv); chat.scrollTop = chat.scrollHeight;
+        });
+    }
+
+    // コーチ変更
+    async function loadCoachChange() {
+      hideAll();
+      let mapping;
+      try { mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.ok ? r.json() : Promise.reject()); } catch { mapping = null; }
+      const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
+      const sel = document.getElementById('coachSelect'); sel.innerHTML = '<option value="">-- 選択してください --</option>';
+      coaches.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.text = `${c.code_id} ${c.name}`; if (mapping && mapping.coachId === c.id) opt.selected = true; sel.appendChild(opt); });
+      document.getElementById('coach-select-area').style.display = 'block';
+    }
+
+    function confirmCoach() {
+      const coachId = document.getElementById('coachSelect').value; if (!coachId) return alert('コー
