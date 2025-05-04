@@ -27,6 +27,17 @@
 
 <div id="admin-area" style="display:none;">
 
+<!-- 🔍 フィルタ追加 -->
+<div class="card">
+  <h5>フィルター</h5>
+  <input type="text" id="filterName" class="form-control" placeholder="名前で検索" oninput="applyFilter()">
+  <select id="filterStatus" class="form-control mt-2" onchange="applyFilter()">
+    <option value="">すべてのステータス</option>
+    <option value="true">受付中のみ</option>
+    <option value="false">受付停止中のみ</option>
+  </select>
+</div>
+
   <!-- コーチ一覧表示 -->
   <div class="card">
     <h4 class="text-center">コーチ一覧</h4>
@@ -89,19 +100,33 @@
   }
 
   function fetchProfiles() {
-    fetch(`${API_BASE}/admin/profiles`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        const list = document.getElementById('profile-list');
-        list.innerHTML = data.map(p => `
-          <div class="card p-2 mb-2" onclick="showEditForm('${p.id}')">
-            <div><strong>コーチID:</strong> ${p.code_id || ''}</div>
-            <div><strong>名前:</strong> ${p.name || ''}</div>
-            <div><strong>ステータス:</strong> <span class="status-${p.availability_status}">${p.availability_status ? '受付中' : '受付停止中'}</span></div>
-          </div>
-        `).join('');
-      });
-  }
+  fetch(`${API_BASE}/admin/profiles`, { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      allProfiles = data;
+      applyFilter(); // 初回表示時もフィルタを通す
+    });
+}
+
+function applyFilter() {
+  const nameFilter = document.getElementById('filterName').value.toLowerCase();
+  const statusFilter = document.getElementById('filterStatus').value;
+  const list = document.getElementById('profile-list');
+
+  const filtered = allProfiles.filter(p => {
+    const matchesName = p.name?.toLowerCase().includes(nameFilter);
+    const matchesStatus = statusFilter === '' || String(p.availability_status) === statusFilter;
+    return matchesName && matchesStatus;
+  });
+
+  list.innerHTML = filtered.map(p => `
+    <div class="card p-2 mb-2" onclick="showEditForm('${p.id}')">
+      <div><strong>コーチID:</strong> ${p.code_id || ''}</div>
+      <div><strong>名前:</strong> ${p.name || ''}</div>
+      <div><strong>ステータス:</strong> <span class="status-${p.availability_status}">${p.availability_status ? '受付中' : '受付停止中'}</span></div>
+    </div>
+  `).join('');
+}
 
   function showEditForm(id) {
     fetch(`${API_BASE}/admin/profiles`, { credentials: 'include' })
