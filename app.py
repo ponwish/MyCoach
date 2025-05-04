@@ -15,7 +15,10 @@ app.config.update(
 app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
 CORS(
     app,
-    origins=["https://mycoach.onrender.com"],  # your backend domain
+    origins=[
+      "https://imaginative-meerkat-5675d3.netlify.app",
+      "https://mycoach.onrender.com"
+    ],
     supports_credentials=True
 )
 
