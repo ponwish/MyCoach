@@ -76,18 +76,24 @@
     const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // LIFF init and fallback
-      try {
-        await liff.init({ liffId: '2007334673-1dVleAwO' });
-        if (!liff.isLoggedIn()) await liff.login();
-        const profile = await liff.getProfile();
-        userId = profile.userId;
-      } catch (err) {
-        console.warn('LIFF init/login failed:', err);
-      }
-      // Always show chat section initially
-      showSection('chat');
-    });
+  try {
+    await liff.init({ liffId: '2007334673-1dVleAwO' });
+
+    if (!liff.isLoggedIn()) {
+      await liff.login(); // 未ログインならログインへ
+    }
+
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    if (!userId) throw new Error("userId取得失敗");
+    showSection('chat');
+
+  } catch (err) {
+    console.error('LIFFエラー:', err);
+    alert('LINEログインに失敗しました。再読み込みしてください。');
+  }
+});
 
     document.getElementById('hamburger').addEventListener('click', () => {
       const menu = document.getElementById('menu');
@@ -155,22 +161,36 @@
     }
 
     function sendTalk() {
-      document.getElementById('suggestions').style.display = 'none';
-      const message = document.getElementById('talkInput').value;
-      if (!message) return;
-      const chat = document.getElementById('chat');
-      const userMsgDiv = document.createElement('div'); userMsgDiv.className = 'user-message'; userMsgDiv.innerHTML = `<span>${message}</span>`;
-      chat.appendChild(userMsgDiv);
-      document.getElementById('talkInput').value = '';
-      fetch(`${API_BASE_URL}/talk`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, message }) })
-        .then(res => res.json()).then(data => {
-          if (data.requireGoal) return showSection('goal');
-          if (data.requireCoach) return showSection('coach');
-          const aiMsgDiv = document.createElement('div'); aiMsgDiv.className = 'ai-message'; aiMsgDiv.innerHTML = `<span>${data.message}</span>`;
-          chat.appendChild(aiMsgDiv);
-          chat.scrollTop = chat.scrollHeight;
-        });
-    }
+  if (!userId) return alert('ユーザー情報が取得できていません');
+  document.getElementById('suggestions').style.display = 'none';
+
+  const message = document.getElementById('talkInput').value;
+  if (!message) return;
+
+  const chat = document.getElementById('chat');
+  const userMsgDiv = document.createElement('div');
+  userMsgDiv.className = 'user-message';
+  userMsgDiv.innerHTML = `<span>${message}</span>`;
+  chat.appendChild(userMsgDiv);
+  document.getElementById('talkInput').value = '';
+
+  fetch(`${API_BASE_URL}/talk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, message })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.requireGoal) return showSection('goal');
+    if (data.requireCoach) return showSection('coach');
+    const aiMsgDiv = document.createElement('div');
+    aiMsgDiv.className = 'ai-message';
+    aiMsgDiv.innerHTML = `<span>${data.message}</span>`;
+    chat.appendChild(aiMsgDiv);
+    chat.scrollTop = chat.scrollHeight;
+  });
+}
+
 
     async function loadCoachChange() {
       hideAll();
