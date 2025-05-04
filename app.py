@@ -179,40 +179,80 @@ def assign_coach():
         app.logger.error(f"Assign coach error: {e}")
         return jsonify({'message':'DBエラー'}), 500
 
-@app.route('/talk', methods=['POST', 'OPTIONS'])  # ✅ OPTIONS追加
+@app.route('/talk', methods=['POST', 'OPTIONS'])
 def handle_talk():
     if request.method == 'OPTIONS':
         return '', 204
+
     data = request.json
     user_id = data.get('userId', '')
     user_message = (data.get('message') or '').strip()
     if not user_message:
         return jsonify({'message': 'メッセージが空です'}), 400
+
+    # ✅ 目標チェック
+    try:
+        goal_resp = supabase.table('user_goals').select('goal').eq('user_id', user_id).single().execute()
+        user_goal = goal_resp.data['goal']
+    except:
+        return jsonify({'requireGoal': True}), 200
+
+    # ✅ コーチチェック
+    try:
+        coach_resp = supabase.table('coach_client_map').select('coach_id').eq('client_id', user_id).single().execute()
+        coach_id = coach_resp.data['coach_id']
+    except:
+        return jsonify({'requireCoach': True}), 200
+
+    # ✅ コーチ情報を取得（コーチ名など）
+    try:
+        coach_profile = supabase.table('profiles').select('name').eq('id', coach_id).single().execute()
+        coach_name = coach_profile.data['name']
+    except:
+        coach_name = "あなたの担当コーチ"
+
+    # ✅ ユーザー発言を履歴登録
     try:
         supabase.table('chat_history').insert({
             'user_id': user_id,
+            'coach_id': coach_id,
             'content': user_message,
             'role': 'user',
             'created_at': datetime.utcnow().isoformat()
         }).execute()
     except:
         pass
+
+    # ✅ GPTに文脈込みで問い合わせ
+    prompt = f"""あなたの担当コーチは「{coach_name}」です。
+ユーザーの目標は「{user_goal}」です。
+ユーザーからの質問:「{user_message}」
+プロのコーチとして的確に助言してください。"""
+
     resp = openai_client.chat.completions.create(
         model="gpt-4o",
-        messages=[{'role':'system','content':'プロのコーチです。'}, {'role':'user','content': user_message}],
+        messages=[
+            {'role': 'system', 'content': 'あなたはプロのコーチです。'},
+            {'role': 'user', 'content': prompt}
+        ],
         temperature=0.7
     )
+
     ai_message = resp.choices[0].message.content.strip()
+
     try:
         supabase.table('chat_history').insert({
             'user_id': user_id,
+            'coach_id': coach_id,
             'content': ai_message,
             'role': 'assistant',
             'created_at': datetime.utcnow().isoformat()
         }).execute()
     except:
         pass
+
     return jsonify({'message': ai_message}), 200
+
 
 @app.route('/user/history', methods=['GET'])
 def get_chat_history():
