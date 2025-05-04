@@ -7,35 +7,31 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-# Production session cookie settings
 app.config.update(
     SESSION_COOKIE_SAMESITE='None',
     SESSION_COOKIE_SECURE=True,
 )
 app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
+
+# ✅ CORS設定を強化
 CORS(
     app,
-    origins=[
-      "https://imaginative-meerkat-5675d3.netlify.app",
-      "https://mycoach.onrender.com"
-    ],
-    supports_credentials=True
+    resources={r"/*": {"origins": [
+        "https://imaginative-meerkat-5675d3.netlify.app",
+        "https://mycoach.onrender.com"
+    ]}},
+    supports_credentials=True,
+    allow_headers="*",
+    methods=["GET", "POST", "PATCH", "OPTIONS"]
 )
 
-# Admin credentials (should ideally be in env vars)
 ADMIN_ID = os.getenv("ADMIN_ID", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "password1234")
-
-# OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Supabase client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
-# -----------------------------
-# Admin endpoints
 
 @app.route('/admin/login', methods=['POST'])
 def admin_login():
@@ -56,7 +52,6 @@ def manage_profiles():
         except APIError as e:
             app.logger.error(f"Fetch profiles error: {e}")
             return jsonify([]), 500
-    # POST -> create profile
     data = request.json
     payload = {
         'code_id': data.get('code_id'),
@@ -83,31 +78,25 @@ def update_profile(profile_id):
         return jsonify({'message': '未認証'}), 403
     data = request.json
     update_data = {}
-
-    # 特にstatus変更がある場合は、変更前のステータスを取得
     previous_status = None
     if 'availability_status' in data:
         try:
             old = supabase.table('profiles').select('availability_status').eq('id', profile_id).single().execute()
             previous_status = old.data['availability_status']
         except:
-            pass  # エラーでもログなしで続行可
-
+            pass
     for key in ['name','age','gender','job','background','certifications','vision','availability_status']:
         if key in data:
             update_data[key] = data[key]
     try:
         supabase.table('profiles').update(update_data).eq('id', profile_id).execute()
-
-        # ログ記録：availability_statusが変わった場合のみ
         if 'availability_status' in update_data and previous_status is not None and previous_status != update_data['availability_status']:
             supabase.table('status_change_logs').insert({
                 'profile_id': profile_id,
                 'previous_status': previous_status,
                 'new_status': update_data['availability_status'],
-                'changed_by': 'admin',  # 将来的に拡張可能
+                'changed_by': 'admin',
             }).execute()
-
         return jsonify({'message': '更新成功'}), 200
     except APIError as e:
         app.logger.error(f"Update profile error: {e}")
@@ -123,11 +112,10 @@ def get_status_logs(profile_id):
     except:
         return jsonify([]), 200
 
-
-# -----------------------------
-# Goal endpoints
-@app.route('/goal', methods=['POST'])
+@app.route('/goal', methods=['POST', 'OPTIONS'])  # ✅ OPTIONS追加
 def handle_goal():
+    if request.method == 'OPTIONS':
+        return '', 204
     data = request.json
     user_id = data.get('userId', '')
     goal = (data.get('goal') or '').strip()
@@ -158,8 +146,6 @@ def get_user_goal():
     except APIError:
         return jsonify({'goal': None}), 404
 
-# -----------------------------
-# Coach endpoints
 @app.route('/coaches', methods=['GET'])
 def list_coaches():
     try:
@@ -178,8 +164,10 @@ def get_user_coach():
     except APIError:
         return jsonify({'coachId': None}), 404
 
-@app.route('/user/assign_coach', methods=['POST'])
+@app.route('/user/assign_coach', methods=['POST', 'OPTIONS'])  # ✅ OPTIONS追加
 def assign_coach():
+    if request.method == 'OPTIONS':
+        return '', 204
     data = request.json
     try:
         supabase.table('coach_client_map').upsert(
@@ -191,9 +179,54 @@ def assign_coach():
         app.logger.error(f"Assign coach error: {e}")
         return jsonify({'message':'DBエラー'}), 500
 
-# -----------------------------
-# Chat endpoints and history similar...
-# ...
+@app.route('/talk', methods=['POST', 'OPTIONS'])  # ✅ OPTIONS追加
+def handle_talk():
+    if request.method == 'OPTIONS':
+        return '', 204
+    data = request.json
+    user_id = data.get('userId', '')
+    user_message = (data.get('message') or '').strip()
+    if not user_message:
+        return jsonify({'message': 'メッセージが空です'}), 400
+    try:
+        supabase.table('chat_history').insert({
+            'user_id': user_id,
+            'content': user_message,
+            'role': 'user',
+            'created_at': datetime.utcnow().isoformat()
+        }).execute()
+    except:
+        pass
+    resp = openai_client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{'role':'system','content':'プロのコーチです。'}, {'role':'user','content': user_message}],
+        temperature=0.7
+    )
+    ai_message = resp.choices[0].message.content.strip()
+    try:
+        supabase.table('chat_history').insert({
+            'user_id': user_id,
+            'content': ai_message,
+            'role': 'assistant',
+            'created_at': datetime.utcnow().isoformat()
+        }).execute()
+    except:
+        pass
+    return jsonify({'message': ai_message}), 200
+
+@app.route('/user/history', methods=['GET'])
+def get_chat_history():
+    user_id = request.args.get('userId', '')
+    coach_id = request.args.get('coachId')
+    try:
+        q = supabase.table('chat_history').select('*').eq('user_id', user_id)
+        if coach_id:
+            q = q.eq('coach_id', coach_id)
+        data = q.order('created_at', asc=True).execute()
+        return jsonify(data.data), 200
+    except:
+        return jsonify([]), 200
+
 if __name__ == '__main__':
-    port = int(os.getenv('PORT',5000))
+    port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
