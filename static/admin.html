@@ -60,7 +60,7 @@
     <textarea id="editCertifications" class="form-control" placeholder="資格"></textarea>
     <textarea id="editVision" class="form-control" placeholder="ビジョン"></textarea>
     <button class="btn btn-primary w-100" onclick="updateProfile()">更新</button>
-    <button class="btn btn-warning w-100 mt-2" onclick="softDeleteProfile()">受付停止</button>
+    <button class="btn btn-secondary w-100 mt-2" onclick="toggleAvailability()">ステータス切替</button>
   </div>
 
 </div>
@@ -165,6 +165,24 @@
     });
   }
 
+  function reviveProfile() {
+  const id = document.getElementById('editId').value;
+  fetch(`${API_BASE}/admin/profiles/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ availability_status: true })
+  })
+  .then(res => {
+    if (res.ok) {
+      fetchProfiles();
+      document.getElementById('editForm').style.display = 'none';
+    } else {
+      alert('ステータス変更失敗');
+    }
+  });
+}
+
   function softDeleteProfile() {
     const id = document.getElementById('editId').value;
     fetch(`${API_BASE}/admin/profiles/${id}`, {
@@ -177,6 +195,28 @@
       if (res.ok) { fetchProfiles(); document.getElementById('editForm').style.display = 'none'; } else alert('ステータス変更失敗');
     });
   }
+
+  function toggleAvailability() {
+  const id = document.getElementById('editId').value;
+  const currentStatus = document.getElementById('editStatus').textContent.trim() === '受付中';
+  const newStatus = !currentStatus;
+
+  fetch(`${API_BASE}/admin/profiles/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ availability_status: newStatus })
+  })
+  .then(res => {
+    if (res.ok) {
+      fetchProfiles();
+      document.getElementById('editForm').style.display = 'none';
+    } else {
+      alert('ステータス変更失敗');
+    }
+  });
+}
+  
 </script>
 
 </body>
