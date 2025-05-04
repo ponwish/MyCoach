@@ -83,16 +83,46 @@ def update_profile(profile_id):
         return jsonify({'message': '未認証'}), 403
     data = request.json
     update_data = {}
-    # allow fields
+
+    # 特にstatus変更がある場合は、変更前のステータスを取得
+    previous_status = None
+    if 'availability_status' in data:
+        try:
+            old = supabase.table('profiles').select('availability_status').eq('id', profile_id).single().execute()
+            previous_status = old.data['availability_status']
+        except:
+            pass  # エラーでもログなしで続行可
+
     for key in ['name','age','gender','job','background','certifications','vision','availability_status']:
         if key in data:
             update_data[key] = data[key]
     try:
         supabase.table('profiles').update(update_data).eq('id', profile_id).execute()
+
+        # ログ記録：availability_statusが変わった場合のみ
+        if 'availability_status' in update_data and previous_status is not None and previous_status != update_data['availability_status']:
+            supabase.table('status_change_logs').insert({
+                'profile_id': profile_id,
+                'previous_status': previous_status,
+                'new_status': update_data['availability_status'],
+                'changed_by': 'admin',  # 将来的に拡張可能
+            }).execute()
+
         return jsonify({'message': '更新成功'}), 200
     except APIError as e:
         app.logger.error(f"Update profile error: {e}")
         return jsonify({'message': '更新失敗'}), 500
+
+@app.route('/admin/status_logs/<profile_id>', methods=['GET'])
+def get_status_logs(profile_id):
+    if not session.get('admin_logged_in'):
+        return jsonify({'message': '未認証'}), 403
+    try:
+        logs = supabase.table('status_change_logs').select('*').eq('profile_id', profile_id).order('changed_at', desc=True).execute()
+        return jsonify(logs.data), 200
+    except:
+        return jsonify([]), 200
+
 
 # -----------------------------
 # Goal endpoints

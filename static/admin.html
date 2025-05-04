@@ -74,6 +74,12 @@
     <button class="btn btn-secondary w-100 mt-2" onclick="toggleAvailability()">ステータス切替</button>
   </div>
 
+  <div class="mt-3">
+    <h6>ステータス変更ログ</h6>
+    <ul id="logList" class="list-group small"></ul>
+  </div>
+  
+
 </div>
 
 <script>
@@ -128,24 +134,37 @@ function applyFilter() {
   `).join('');
 }
 
-  function showEditForm(id) {
-    fetch(`${API_BASE}/admin/profiles`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        const p = data.find(x => x.id === id);
-        document.getElementById('editId').value = p.id;
-        document.getElementById('editCodeId').textContent = p.code_id;
-        document.getElementById('editStatus').textContent = p.availability_status ? '受付中' : '受付停止中';
-        document.getElementById('editName').value = p.name || '';
-        document.getElementById('editAge').value = p.age || '';
-        document.getElementById('editGender').value = p.gender || '';
-        document.getElementById('editJob').value = p.job || '';
-        document.getElementById('editBackground').value = p.background || '';
-        document.getElementById('editCertifications').value = p.certifications || '';
-        document.getElementById('editVision').value = p.vision || '';
-        document.getElementById('editForm').style.display = 'block';
-      });
-  }
+function showEditForm(id) {
+  fetch(`${API_BASE}/admin/profiles`, { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const p = data.find(x => x.id === id);
+      document.getElementById('editId').value = p.id;
+      document.getElementById('editCodeId').textContent = p.code_id;
+      document.getElementById('editStatus').textContent = p.availability_status ? '受付中' : '受付停止中';
+      document.getElementById('editName').value = p.name || '';
+      document.getElementById('editAge').value = p.age || '';
+      document.getElementById('editGender').value = p.gender || '';
+      document.getElementById('editJob').value = p.job || '';
+      document.getElementById('editBackground').value = p.background || '';
+      document.getElementById('editCertifications').value = p.certifications || '';
+      document.getElementById('editVision').value = p.vision || '';
+      document.getElementById('editForm').style.display = 'block';
+
+      // ステータスログ取得
+      fetch(`${API_BASE}/admin/status_logs/${p.id}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(logs => {
+          const logList = document.getElementById('logList');
+          logList.innerHTML = logs.map(log => `
+            <li class="list-group-item">
+              ${log.changed_at ? new Date(log.changed_at).toLocaleString('ja-JP') : ''}：
+              ${log.previous_status ? '受付中' : '受付停止中'} → ${log.new_status ? '受付中' : '受付停止中'}
+            </li>
+          `).join('');
+        });
+    });
+}
 
   function createProfile() {
     const payload = {
