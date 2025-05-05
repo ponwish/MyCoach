@@ -5,7 +5,9 @@
   <title>AIコーチング 2025</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* 全体 */
     body { margin:0; padding:0; background: linear-gradient(135deg,#e0f7fa,#e8f4fd); font-family:'Segoe UI',sans-serif; }
@@ -102,6 +104,12 @@
     <h1>AIコーチング 2025</h1>
     <button id="hamburger">☰</button>
   </header>
+  <div id="loginSelector" style="display: none; text-align: center; padding: 2rem;">
+    <h2 class="mb-4">ログイン方法を選んでください</h2>
+    <button onclick="loginWithLine()" class="btn btn-success m-2">LINEでログイン</button>
+    <button onclick="loginWithEmail()" class="btn btn-primary m-2">メールでログイン</button>
+    <button onclick="loginWithGoogle()" class="btn btn-danger m-2">Googleでログイン</button>
+  </div>
   <div id="menu">
     <ul>
       <li onclick="navigate('chat')">トーク</li>
@@ -148,24 +156,58 @@
     const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
 
     document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        await liff.init({ liffId: '2007334673-1dVleAwO' });
+  try {
+    // ✅ Supabase セッション確認（ログイン済なら userId を取得）
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      userId = session.user.id;
+      showSection('chat');
+      return;
+    }
 
-        if (!liff.isLoggedIn()) {
-          await liff.login(); // 未ログインならログインへ
+    // ✅ LINEログイン（LIFF）確認
+    await liff.init({ liffId: '2007334673-1dVleAwO' });
+
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      userId = profile.userId;
+
+      if (!userId) throw new Error("userId取得失敗");
+
+      showSection('chat');
+      return;
+    }
+
+    // ✅ どちらにも該当しなければログイン選択画面表示
+    document.getElementById('loginSelector').style.display = 'block';
+
+  } catch (err) {
+    console.error('ログイン初期化エラー:', err);
+    alert('ログイン処理に失敗しました。再読み込みしてください。');
+  }
+});
+    async function loginWithGoogle() {
+      await supabase.auth.signInWithOAuth({ provider: 'google' });
+    }
+
+    async function loginWithEmail() {
+      const email = prompt("メールアドレスを入力してください");
+      if (!email) return;
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.href  // クリック後に戻る場所
         }
+      });
 
-        const profile = await liff.getProfile();
-        userId = profile.userId;
-
-        if (!userId) throw new Error("userId取得失敗");
-        showSection('chat');
-
-      } catch (err) {
-        console.error('LIFFエラー:', err);
-        alert('LINEログインに失敗しました。再読み込みしてください。');
+      if (error) {
+        alert("ログインメールの送信に失敗しました: " + error.message);
+      } else {
+        alert("メールを送信しました。受信トレイを確認してください。");
       }
-    });
+    }
+
 
     document.getElementById('talkInput').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
@@ -175,6 +217,18 @@
           sendTalk();                   // 通常送信
         }
         // shiftKeyあり：改行するので何もしない
+      }
+    });
+    
+    window.addEventListener('load', async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session?.user) {
+        alert(`ログイン成功！ユーザID: ${session.user.id}`);
+        console.log('ユーザ情報:', session.user);
+      } else if (error) {
+        alert(`ログインエラー: ${error.message}`);
+      } else {
+        console.log('未ログイン状態');
       }
     });
 
@@ -302,8 +356,6 @@
         chat.scrollTop = chat.scrollHeight;
       });
     }
-
-
 
     async function loadCoachChange() {
       hideAll();
