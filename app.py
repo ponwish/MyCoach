@@ -180,7 +180,7 @@ def assign_coach():
             'client_id': user_id,
             'coach_id': coach_id,
             'updated_at': datetime.utcnow().isoformat()
-        }).on_conflict('client_id').execute()  # ✅ 修正ポイント
+        }).execute()
 
         return jsonify({'message': 'OK'}), 200
 
@@ -191,6 +191,7 @@ def assign_coach():
     except Exception as e:
         app.logger.error(f"Unexpected error in assign_coach: {e}")
         return jsonify({'message': 'サーバーエラー'}), 500
+
 
 
 
