@@ -79,6 +79,40 @@
       min-width: 70px;
     }
 
+    .coach-card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .coach-card:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .coach-name {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .coach-status {
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .status-true {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-false {
+      color: red;
+      font-weight: bold;
+}
   </style>
 </head>
 <body>
@@ -112,6 +146,10 @@
       <h4>担当コーチを選択</h4>
       <select id="coachSelect"><option value="">-- 選択してください --</option></select>
       <button class="btn btn-success" onclick="confirmCoach()">確定</button>
+      <div id="coach-select-area">
+        <div id="coachList"></div>
+        <button onclick="confirmCoachSelection()">コーチを決定</button>
+      </div>      
     </div>
     <div class="card" id="history-area" style="display:none;">
       <h4>トーク履歴</h4>
@@ -253,20 +291,43 @@
   });
 }
 
+let selectedCoachId = '';
+async function loadCoachChange() {
+  hideAll();
+  const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
+  const container = document.getElementById('coachList');
+  container.innerHTML = '';
 
-    async function loadCoachChange() {
-      hideAll();
-      let mapping;
-      try { mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.ok ? r.json() : Promise.reject()); } catch { mapping = null; }
-      const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
-      const select = document.getElementById('coachSelect'); select.innerHTML = '<option value="">-- 選択してください --</option>';
-      coaches.forEach(c => {
-        const opt = document.createElement('option'); opt.value = c.id; opt.text = `${c.code_id} ${c.name}`;
-        if (mapping && mapping.coachId === c.id) opt.selected = true;
-        select.appendChild(opt);
-      });
-      document.getElementById('coach-select-area').style.display = 'block';
-    }
+  coaches.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'coach-card';
+    card.innerHTML = `
+      <div class="coach-name">${c.name || '名前未設定'}</div>
+      <div class="coach-status">
+        <span class="status-${c.availability_status}">
+          ${c.availability_status ? '受付中' : '受付停止中'}
+        </span>
+      </div>
+      ${c.vision ? `<div class="coach-vision mt-2">${c.vision}</div>` : ''}
+    `;
+    card.onclick = () => {
+      selectedCoachId = c.id;
+      document.querySelectorAll('.coach-card').forEach(el => el.style.borderColor = '#ddd');
+      card.style.borderColor = 'blue';
+    };
+    container.appendChild(card);
+  });
+  document.getElementById('coach-select-area').style.display = 'block';
+}
+
+function confirmCoachSelection() {
+  if (!selectedCoachId) return alert('コーチを選択してください');
+  fetch(`${API_BASE_URL}/user/assign_coach`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, coachId: selectedCoachId })
+  }).then(res => res.ok && showSection('chat'));
+}
 
     function confirmCoach() {
       const coachId = document.getElementById('coachSelect').value;
