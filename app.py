@@ -168,16 +168,32 @@ def get_user_coach():
 def assign_coach():
     if request.method == 'OPTIONS':
         return '', 204
-    data = request.json
     try:
+        data = request.get_json(force=True)  # ✅ 修正
+        user_id = data.get('userId')
+        coach_id = data.get('coachId')
+
+        if not user_id or not coach_id:
+            return jsonify({'message': 'userIdとcoachIdは必須です'}), 400
+
         supabase.table('coach_client_map').upsert(
-            {'client_id': data.get('userId'), 'coach_id': data.get('coachId'), 'updated_at': datetime.utcnow().isoformat()},
+            {
+                'client_id': user_id,
+                'coach_id': coach_id,
+                'updated_at': datetime.utcnow().isoformat()
+            },
             ['client_id']
         ).execute()
-        return jsonify({'message':'OK'}), 200
+        return jsonify({'message': 'OK'}), 200
+
     except APIError as e:
         app.logger.error(f"Assign coach error: {e}")
-        return jsonify({'message':'DBエラー'}), 500
+        return jsonify({'message': 'DBエラー'}), 500
+
+    except Exception as e:
+        app.logger.error(f"Unexpected error in assign_coach: {e}")
+        return jsonify({'message': 'サーバーエラー'}), 500
+
 
 @app.route('/talk', methods=['POST', 'OPTIONS'])
 def handle_talk():
