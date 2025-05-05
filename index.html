@@ -79,6 +79,11 @@
       min-width: 70px;
     }
 
+    .fw-bold { font-weight: bold; }
+    .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+    .small { font-size: 0.875em; }
+    .text-muted { color: #6c757d; }
+
   </style>
 </head>
 <body>
@@ -284,18 +289,42 @@
         coaches.forEach(c => filter.appendChild(new Option(`${c.code_id} ${c.name}`, c.id)));
         filter.addEventListener('change', loadHistory);
       }
-      const params = new URLSearchParams({ userId }); if (filter.value) params.append('coachId', filter.value);
+
+      const params = new URLSearchParams({ userId });
+      if (filter.value) params.append('coachId', filter.value);
       const history = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
-      const container = document.getElementById('historyList'); container.innerHTML = '';
+
+      const container = document.getElementById('historyList');
+      container.innerHTML = '';
+
+      let lastDate = null;
+
       history.forEach(msg => {
-        const timeDiv = document.createElement('div'); timeDiv.className='text-center text-muted small mb-1';
-        timeDiv.textContent = new Date(msg.created_at).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-        container.appendChild(timeDiv);
-        const bubble = document.createElement('div'); bubble.className = msg.role==='user'?'user-message':'ai-message'; bubble.innerHTML=`<span>${msg.content}</span>`;
-        container.appendChild(bubble);
+        const dateObj = new Date(msg.created_at);
+        const dateStr = dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const timeStr = dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+        if (lastDate !== dateStr) {
+          const dateHeader = document.createElement('div');
+          dateHeader.className = 'text-center fw-bold text-secondary my-2';
+          dateHeader.textContent = `📅 ${dateStr}`;
+          container.appendChild(dateHeader);
+          lastDate = dateStr;
+        }
+
+        const msgWrapper = document.createElement('div');
+        msgWrapper.className = msg.role === 'user' ? 'message user-message' : 'message ai-message';
+        msgWrapper.innerHTML = `
+          <div class="bubble">
+            <div class="mb-1 small text-muted">${timeStr}</div>
+            ${msg.content}
+          </div>`;
+        container.appendChild(msgWrapper);
       });
+
       document.getElementById('history-area').style.display = 'block';
     }
+
   </script>
 </body>
 </html>
