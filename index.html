@@ -83,6 +83,17 @@
     .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
     .small { font-size: 0.875em; }
     .text-muted { color: #6c757d; }
+    .typing::after {
+      content: '...';
+      animation: dots 1s steps(3, end) infinite;
+    }
+
+    @keyframes dots {
+      0% { content: ''; }
+      33% { content: '.'; }
+      66% { content: '..'; }
+      100% { content: '...'; }
+    }
 
   </style>
 </head>
@@ -228,35 +239,51 @@
     }
 
     function sendTalk() {
-  if (!userId) return alert('ユーザー情報が取得できていません');
-  document.getElementById('suggestions').style.display = 'none';
+      if (!userId) return alert('ユーザー情報が取得できていません');
+      document.getElementById('suggestions').style.display = 'none';
 
-  const message = document.getElementById('talkInput').value;
-  if (!message) return;
+      const message = document.getElementById('talkInput').value;
+      if (!message) return;
 
-  const chat = document.getElementById('chat');
-  const userMsgDiv = document.createElement('div');
-  userMsgDiv.className = 'message user-message';
-  userMsgDiv.innerHTML = `<div class="bubble">${message}</div>`;
-  chat.appendChild(userMsgDiv);
-  document.getElementById('talkInput').value = '';
+      const chat = document.getElementById('chat');
 
-  fetch(`${API_BASE_URL}/talk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, message })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.requireGoal) return showSection('goal');
-    if (data.requireCoach) return showSection('coach');
-    const aiMsgDiv = document.createElement('div');
-    aiMsgDiv.className = 'message ai-message';
-    aiMsgDiv.innerHTML = `<div class="bubble">${data.message}</div>`;
-    chat.appendChild(aiMsgDiv);
-    chat.scrollTop = chat.scrollHeight;
-  });
-}
+      // 💬 ユーザーメッセージ表示
+      const userMsgDiv = document.createElement('div');
+      userMsgDiv.className = 'message user-message';
+      userMsgDiv.innerHTML = `<div class="bubble">${message}</div>`;
+      chat.appendChild(userMsgDiv);
+      document.getElementById('talkInput').value = '';
+
+      // 🔄 GPTのローディングバブル追加
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message ai-message';
+      loadingDiv.id = 'typing-indicator';
+      loadingDiv.innerHTML = `<div class="bubble"><span class="typing">...</span></div>`;
+      chat.appendChild(loadingDiv);
+      chat.scrollTop = chat.scrollHeight;
+
+      fetch(`${API_BASE_URL}/talk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.requireGoal) return showSection('goal');
+        if (data.requireCoach) return showSection('coach');
+
+        // 🔁 typingを削除してから実際の返答を追加
+        const typingEl = document.getElementById('typing-indicator');
+        if (typingEl) typingEl.remove();
+
+        const aiMsgDiv = document.createElement('div');
+        aiMsgDiv.className = 'message ai-message';
+        aiMsgDiv.innerHTML = `<div class="bubble">${data.message}</div>`;
+        chat.appendChild(aiMsgDiv);
+        chat.scrollTop = chat.scrollHeight;
+      });
+    }
+
 
 
     async function loadCoachChange() {
