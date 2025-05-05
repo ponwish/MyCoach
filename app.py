@@ -177,10 +177,10 @@ def assign_coach():
             return jsonify({'message': 'userIdとcoachIdは必須です'}), 400
 
         supabase.table('coach_client_map').upsert({
-            'client_id': user_id,
-            'coach_id': coach_id,
-            'updated_at': datetime.utcnow().isoformat()
-        }).execute()
+                'client_id': user_id,
+                'coach_id': coach_id
+            }, on_conflict=['client_id']).execute()
+
 
         return jsonify({'message': 'OK'}), 200
 
