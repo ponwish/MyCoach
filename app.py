@@ -258,14 +258,18 @@ def handle_talk():
 def get_chat_history():
     user_id = request.args.get('userId', '')
     coach_id = request.args.get('coachId')
+
     try:
         q = supabase.table('chat_history').select('*').eq('user_id', user_id)
         if coach_id:
+            # コーチIDでフィルタ（coach_idがnullのレコードは除外される）
             q = q.eq('coach_id', coach_id)
         data = q.order('created_at', asc=True).execute()
         return jsonify(data.data), 200
-    except:
+    except APIError as e:
+        app.logger.error(f"Get chat history error: {e}")
         return jsonify([]), 200
+
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
