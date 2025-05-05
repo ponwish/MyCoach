@@ -70,6 +70,15 @@
       color: #000;
       border-bottom-left-radius: 0;
     }
+
+    .input-group textarea {
+      resize: none;
+    }
+
+    #sendButton {
+      min-width: 70px;
+    }
+
   </style>
 </head>
 <body>
@@ -93,8 +102,11 @@
     <div class="card" id="chat-area" style="display:none;">
       <div id="suggestions"></div>
       <div id="chat" class="chat-container"></div>
-      <input type="text" id="talkInput" placeholder="メッセージを入力..." />
-      <button class="btn btn-primary" onclick="sendTalk()">送信</button>
+      <!-- ✅ 入力エリア：textarea＋送信ボタン -->
+      <div class="input-group mt-3">
+        <textarea id="talkInput" class="form-control" rows="2" placeholder="悩みや質問を入力してください（Shift+Enterで改行）"></textarea>
+        <button id="sendButton" class="btn btn-primary" onclick="sendTalk()">送信</button>
+      </div>
     </div>
     <div class="card" id="coach-select-area" style="display:none;">
       <h4>担当コーチを選択</h4>
@@ -107,6 +119,7 @@
       <div id="historyList" class="chat-container"></div>
     </div>
   </main>
+
   <script>
     const API_BASE_URL = 'https://mycoach.onrender.com';
     let userId = '';
@@ -114,24 +127,35 @@
     const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
 
     document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    await liff.init({ liffId: '2007334673-1dVleAwO' });
+      try {
+        await liff.init({ liffId: '2007334673-1dVleAwO' });
 
-    if (!liff.isLoggedIn()) {
-      await liff.login(); // 未ログインならログインへ
-    }
+        if (!liff.isLoggedIn()) {
+          await liff.login(); // 未ログインならログインへ
+        }
 
-    const profile = await liff.getProfile();
-    userId = profile.userId;
+        const profile = await liff.getProfile();
+        userId = profile.userId;
 
-    if (!userId) throw new Error("userId取得失敗");
-    showSection('chat');
+        if (!userId) throw new Error("userId取得失敗");
+        showSection('chat');
 
-  } catch (err) {
-    console.error('LIFFエラー:', err);
-    alert('LINEログインに失敗しました。再読み込みしてください。');
-  }
-});
+      } catch (err) {
+        console.error('LIFFエラー:', err);
+        alert('LINEログインに失敗しました。再読み込みしてください。');
+      }
+    });
+
+    document.getElementById('talkInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        if (!e.shiftKey) {
+          e.preventDefault();           // 改行をキャンセル
+          document.getElementById('suggestions').style.display = 'none';  // 💡あれば非表示
+          sendTalk();                   // 通常送信
+        }
+        // shiftKeyあり：改行するので何もしない
+      }
+    });
 
     document.getElementById('hamburger').addEventListener('click', () => {
       const menu = document.getElementById('menu');
