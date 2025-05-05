@@ -253,23 +253,29 @@ def handle_talk():
 
     return jsonify({'message': ai_message}), 200
 
-
 @app.route('/user/history', methods=['GET'])
 def get_chat_history():
     user_id = request.args.get('userId', '')
     coach_id = request.args.get('coachId')
 
+    if not user_id:
+        return jsonify({'error': 'userId is required'}), 400
+
     try:
         q = supabase.table('chat_history').select('*').eq('user_id', user_id)
-        if coach_id:
-            # コーチIDでフィルタ（coach_idがnullのレコードは除外される）
-            q = q.eq('coach_id', coach_id)
-        data = q.order('created_at', asc=True).execute()
-        return jsonify(data.data), 200
-    except APIError as e:
-        app.logger.error(f"Get chat history error: {e}")
-        return jsonify([]), 200
 
+        if coach_id:
+            q = q.eq('coach_id', coach_id)
+
+        # ✅ 正しい並び順指定方法
+        q = q.order('created_at', desc=False)
+
+        data = q.execute()
+        return jsonify(data.data), 200
+
+    except Exception as e:
+        app.logger.error(f"履歴取得中のエラー: {str(e)}")
+        return jsonify({'error': '履歴取得に失敗しました', 'details': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
