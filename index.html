@@ -233,6 +233,7 @@
       let hasCoach = true;
       try {
         const coachRes = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.json());
+        console.log('📦 コーチ情報:', coachRes); // ← デバッグ追加
         document.getElementById('coachNameText').textContent = coachRes.name || '未設定';
       } catch {
         hasCoach = false;
@@ -244,7 +245,6 @@
       if (!suggestionsShown) { renderSuggestions(); suggestions.style.display = 'flex'; suggestionsShown = true; }
       else { suggestions.style.display = 'none'; }
     }
-
 
     function renderSuggestions() {
       const container = document.getElementById('suggestions'); container.innerHTML = ''; 
