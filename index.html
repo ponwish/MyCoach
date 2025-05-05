@@ -129,6 +129,11 @@
       <select id="coachSelect"><option value="">-- 選択してください --</option></select>
       <button class="btn btn-success" onclick="confirmCoach()">確定</button>
     </div>
+    <!-- 💬 チャット画面上部：ユーザー情報表示 -->
+    <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
+      <div><strong>🎯 目標：</strong><span id="userGoalText">読み込み中...</span></div>
+      <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText">読み込み中...</span></div>
+    </div>
     <div class="card" id="history-area" style="display:none;">
       <h4>トーク履歴</h4>
       <select id="historyFilterSelect"><option value="">── 全コーチ ──</option></select>
@@ -215,12 +220,23 @@
       if (!userId) {
         try { const p = await liff.getProfile(); userId = p.userId; } catch {}
       }
+
       let hasGoal = true;
-      try { await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`).then(r => { if (!r.ok) throw ''; }); } catch { hasGoal = false; }
+      try {
+        const goalRes = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`).then(r => r.json());
+        document.getElementById('userGoalText').textContent = goalRes.goal || '未設定';
+      } catch {
+        hasGoal = false;
+      }
       if (!hasGoal) return showSection('goal');
 
       let hasCoach = true;
-      try { await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => { if (!r.ok) throw ''; }); } catch { hasCoach = false; }
+      try {
+        const coachRes = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.json());
+        document.getElementById('coachNameText').textContent = coachRes.name || '未設定';
+      } catch {
+        hasCoach = false;
+      }
       if (!hasCoach) return showSection('coach');
 
       document.getElementById('chat-area').style.display = 'block';
@@ -228,6 +244,7 @@
       if (!suggestionsShown) { renderSuggestions(); suggestions.style.display = 'flex'; suggestionsShown = true; }
       else { suggestions.style.display = 'none'; }
     }
+
 
     function renderSuggestions() {
       const container = document.getElementById('suggestions'); container.innerHTML = ''; 
