@@ -5,7 +5,6 @@
   <title>AIコーチング 2025</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -154,11 +153,6 @@
     let userId = '';
     let suggestionsShown = false;
     const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
-    const supabase = createClient(
-    'https://kyxneqqadoyqxsmohbop.supabase.co',       // 🔁 実際のプロジェクトURL
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5eG5lcXFhZG95cXhzbW9oYm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3NjMxNTgsImV4cCI6MjA2MTMzOTE1OH0.g6TmCxkj5iYkrntgBWVNM1RbWjWSr4Owyz7jn_q3dYM'                   // 🔁 実際の公開キー
-  );
-
     document.addEventListener('DOMContentLoaded', async () => {
   try {
     // ✅ Supabase セッション確認（ログイン済なら userId を取得）
@@ -426,7 +420,16 @@
 
       document.getElementById('history-area').style.display = 'block';
     }
-
   </script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  const supabase = createClient(
+    'https://kyxneqqadoyqxsmohbop.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5eG5lcXFhZG95cXhzbW9oYm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3NjMxNTgsImV4cCI6MjA2MTMzOTE1OH0.g6TmCxkj5iYkrntgBWVNM1RbWjWSr4Owyz7jn_q3dYM'
+  );
+
+  window.supabase = supabase; // ✅ グローバル公開して通常スクリプトと連携
+</script>
 </body>
 </html>
