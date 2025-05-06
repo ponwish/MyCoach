@@ -351,13 +351,19 @@
       }
 
       let hasGoal = true;
+      let goal = '';
       try {
         const goalRes = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`).then(r => r.json());
-        document.getElementById('userGoalText').textContent = goalRes.goal || '未設定';
+        goal = goalRes.goal;
+        document.getElementById('userGoalText').textContent = goal || '未設定';
       } catch {
         hasGoal = false;
       }
-      if (!hasGoal) return showSection('goal');
+
+      if (!goal) {
+        alert('チャットを利用するには、まず目標の設定が必要です。');
+        return showSection('goal');
+      }
 
       let hasCoach = true;
       try {
@@ -365,16 +371,27 @@
         const coachList = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
         const coach = coachList.find(c => c.id === mapping.coachId);
         document.getElementById('coachNameText').textContent = coach?.name || '未設定';
+        if (!mapping.coachId) hasCoach = false;
       } catch (err) {
         console.error("🛑 コーチ取得エラー:", err);
         hasCoach = false;
       }
-      if (!hasCoach) return showSection('coach');
 
+      if (!hasCoach) {
+        alert('チャットを利用するには、担当コーチの選択が必要です。');
+        return showSection('coach');
+      }
+
+      // 目標・コーチが揃っていればチャット表示
       document.getElementById('chat-area').style.display = 'block';
       const suggestions = document.getElementById('suggestions');
-      if (!suggestionsShown) { renderSuggestions(); suggestions.style.display = 'flex'; suggestionsShown = true; }
-      else { suggestions.style.display = 'none'; }
+      if (!suggestionsShown) {
+        renderSuggestions();
+        suggestions.style.display = 'flex';
+        suggestionsShown = true;
+      } else {
+        suggestions.style.display = 'none';
+      }
     }
 
     function renderSuggestions() {
