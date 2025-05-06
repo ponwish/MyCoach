@@ -163,49 +163,44 @@
     const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
 
     document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        try {
-          // ✅ メールリンクからのログイン処理（v2）
-          const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+  try {
+    // ✅ Supabase セッション確認（メールリンクでもここで取得可）
+    const { data: { session }, error } = await supabase.auth.getSession();
 
-          if (error) {
-            console.error('セッション交換失敗:', error.message);
-          } else {
-            console.log('セッション交換成功:', data);
-          }
-        } catch (err) {
-          console.error('exchangeCodeForSession処理エラー:', err);
-        }
-        // ✅ Supabase セッション確認（ログイン済なら userId を取得）
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          userId = session.user.id;
-          showSection('chat');
-          return;
-        }
+    if (error) {
+      console.error('セッション取得エラー:', error.message);
+    }
 
-        // ✅ LINEログイン（LIFF）確認
-        await liff.init({ liffId: '2007334673-1dVleAwO' });
+    if (session?.user) {
+      userId = session.user.id;
+      console.log('✅ ログイン成功:', userId);
+      showSection('chat');
+      return;
+    }
 
-        if (liff.isLoggedIn()) {
-          const profile = await liff.getProfile();
-          userId = profile.userId;
+    // ✅ LINEログイン（LIFF）確認
+    await liff.init({ liffId: '2007334673-1dVleAwO' });
 
-          if (!userId) throw new Error("userId取得失敗");
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      userId = profile.userId;
 
-          showSection('chat');
-          return;
-        }
+      if (!userId) throw new Error("userId取得失敗");
 
-        // ✅ どちらにも該当しなければログイン選択画面表示
-        document.getElementById('loginSelector').style.display = 'block';
+      showSection('chat');
+      return;
+    }
 
-      } catch (err) {
-        console.error('ログイン初期化エラー:', err);
-        alert('ログイン処理に失敗しました。再読み込みしてください。');
-      }
-      startPollingSession();
-    });
+    // ✅ ログイン未済：選択画面を表示
+    document.getElementById('loginSelector').style.display = 'block';
+
+  } catch (err) {
+    console.error('ログイン初期化エラー:', err);
+    alert('ログイン処理に失敗しました。再読み込みしてください。');
+  }
+
+  startPollingSession();
+});
 
     function startPollingSession() {
       if (sessionPollingInterval) return; // 二重防止
