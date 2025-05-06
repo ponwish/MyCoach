@@ -103,6 +103,12 @@
     <h1>AIコーチング 2025</h1>
     <button id="hamburger">☰</button>
   </header>
+  <div id="home-area" class="card" style="display:none;">
+    <h4 class="mb-4 text-center">AIコーチング メニュー</h4>
+    <button class="btn btn-primary w-100 mb-3" onclick="navigate('chat')">💬 チャットをはじめる</button>
+    <button class="btn btn-success w-100 mb-3" onclick="navigate('coach')">👨‍🏫 コーチを変更</button>
+    <button class="btn btn-secondary w-100" onclick="navigate('history')">📜 チャット履歴を見る</button>
+  </div>  
   <div id="loginSelector" style="display: none; text-align: center; padding: 2rem;">
     <h2 class="mb-4">ログイン方法を選んでください</h2>
     <button onclick="loginWithLine()" class="btn btn-success m-2">LINEでログイン</button>
@@ -130,6 +136,11 @@
       <button class="btn btn-success" onclick="submitGoal()">目標を設定</button>
     </div>
     <div class="card" id="chat-area" style="display:none;">
+      <!-- 💬 チャット画面上部：ユーザー情報表示 -->
+      <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
+        <div><strong>🎯 目標：</strong><span id="userGoalText">読み込み中...</span></div>
+        <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText">読み込み中...</span></div>
+      </div>
       <div id="suggestions"></div>
       <div id="chat" class="chat-container"></div>
       <!-- ✅ 入力エリア：textarea＋送信ボタン -->
@@ -142,11 +153,6 @@
       <h4>担当コーチを選択</h4>
       <select id="coachSelect"><option value="">-- 選択してください --</option></select>
       <button class="btn btn-success" onclick="confirmCoach()">確定</button>
-    </div>
-    <!-- 💬 チャット画面上部：ユーザー情報表示 -->
-    <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
-      <div><strong>🎯 目標：</strong><span id="userGoalText">読み込み中...</span></div>
-      <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText">読み込み中...</span></div>
     </div>
     <div class="card" id="history-area" style="display:none;">
       <h4>トーク履歴</h4>
@@ -175,7 +181,7 @@
       userId = session.user.id;
       localStorage.setItem('supabase-login-success', 'true'); 
       console.log('✅ ログイン成功:', userId);
-      showSection('chat');
+      showSection('home');
       return;
     }
 
@@ -188,7 +194,7 @@
 
       if (!userId) throw new Error("userId取得失敗");
 
-      showSection('chat');
+      showSection('home');
       return;
     }
 
@@ -212,7 +218,7 @@
         if (session?.user) {
           clearInterval(sessionPollingInterval);
           userId = session.user.id;
-          showSection('chat');
+          showSection('home');
         }
       }, 1000); // 1秒おきにチェック
     }
@@ -293,7 +299,7 @@
         if (session?.user) {
           userId = session.user.id;
           localStorage.removeItem('supabase-login-success');  // フラグ削除
-          showSection('chat');
+          showSection('home');
         }
       }
     });
@@ -314,18 +320,21 @@
     }
 
     function hideAll() {
-      ['goal-area','chat-area','coach-select-area','history-area'].forEach(id => {
+      ['home-area','goal-area','chat-area','coach-select-area','history-area'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
 
+
     function showSection(section) {
       hideAll();
+      if (section === 'home') document.getElementById('home-area').style.display = 'block';
       if (section === 'chat') checkPrerequisites();
       if (section === 'goal') document.getElementById('goal-area').style.display = 'block';
       if (section === 'coach') loadCoachChange();
       if (section === 'history') loadHistory();
     }
+
 
     function submitGoal() {
       const goal = document.getElementById('goalInput').value.trim();
