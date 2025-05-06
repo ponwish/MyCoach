@@ -184,6 +184,13 @@
     alert('ログイン処理に失敗しました。再読み込みしてください。');
   }
 });
+
+    function loginWithLine() {
+      if (!liff.isLoggedIn()) {
+        liff.login();
+      }
+    }
+
     async function loginWithGoogle() {
       await supabase.auth.signInWithOAuth({ provider: 'google' });
     }
