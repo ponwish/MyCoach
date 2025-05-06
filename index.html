@@ -159,38 +159,55 @@
     const API_BASE_URL = 'https://mycoach.onrender.com';
     let userId = '';
     let suggestionsShown = false;
+    let sessionPollingInterval = null;
     const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
+
     document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    // ✅ Supabase セッション確認（ログイン済なら userId を取得）
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      userId = session.user.id;
-      showSection('chat');
-      return;
+      try {
+        // ✅ Supabase セッション確認（ログイン済なら userId を取得）
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          userId = session.user.id;
+          showSection('chat');
+          return;
+        }
+
+        // ✅ LINEログイン（LIFF）確認
+        await liff.init({ liffId: '2007334673-1dVleAwO' });
+
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          userId = profile.userId;
+
+          if (!userId) throw new Error("userId取得失敗");
+
+          showSection('chat');
+          return;
+        }
+
+        // ✅ どちらにも該当しなければログイン選択画面表示
+        document.getElementById('loginSelector').style.display = 'block';
+
+      } catch (err) {
+        console.error('ログイン初期化エラー:', err);
+        alert('ログイン処理に失敗しました。再読み込みしてください。');
+      }
+      startPollingSession();
+    });
+
+    function startPollingSession() {
+      if (sessionPollingInterval) return; // 二重防止
+
+      sessionPollingInterval = setInterval(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          clearInterval(sessionPollingInterval);
+          userId = session.user.id;
+          showSection('chat');
+        }
+      }, 1000); // 1秒おきにチェック
     }
-
-    // ✅ LINEログイン（LIFF）確認
-    await liff.init({ liffId: '2007334673-1dVleAwO' });
-
-    if (liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      userId = profile.userId;
-
-      if (!userId) throw new Error("userId取得失敗");
-
-      showSection('chat');
-      return;
-    }
-
-    // ✅ どちらにも該当しなければログイン選択画面表示
-    document.getElementById('loginSelector').style.display = 'block';
-
-  } catch (err) {
-    console.error('ログイン初期化エラー:', err);
-    alert('ログイン処理に失敗しました。再読み込みしてください。');
-  }
-});
 
     function loginWithLine() {
       if (!liff.isLoggedIn()) {
