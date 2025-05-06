@@ -164,6 +164,13 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        try {
+        // メールリンクから来た場合はセッションを確定する
+        const { error } = await supabase.auth.getSessionFromUrl();
+        if (error) console.error('URLからのセッション確立失敗:', error);
+      } catch (err) {
+        console.error('getSessionFromUrl処理エラー:', err);
+      }
         // ✅ Supabase セッション確認（ログイン済なら userId を取得）
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
