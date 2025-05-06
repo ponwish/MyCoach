@@ -124,7 +124,6 @@ def handle_goal():
     try:
         supabase.table('user_goals').upsert(
             {'user_id': user_id, 'goal': goal, 'updated_at': datetime.utcnow().isoformat()},
-            ['user_id']
         ).execute()
     except APIError as e:
         app.logger.error(f"Goal upsert error: {e}")
