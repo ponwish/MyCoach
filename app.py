@@ -130,7 +130,7 @@ def handle_goal():
         app.logger.error(f"Goal insert error: {e}")
         return jsonify({"message": "DBエラー"}), 500
 
-@app.route('/user/goal')
+@app.route('/user/goal', methods=['GET', 'OPTIONS'])
 def get_latest_goal():
     user_id = request.args.get('userId')
     try:
@@ -146,7 +146,7 @@ def get_latest_goal():
         app.logger.error(f"Goal fetch error: {e}")
         return jsonify({}), 500
 
-@app.route('/coaches', methods=['GET'])
+@app.route('/coaches', methods=['GET', 'OPTIONS'])
 def list_coaches():
     try:
         resp = supabase.table('profiles').select('id,code_id,name,availability_status').execute()
@@ -155,7 +155,7 @@ def list_coaches():
         app.logger.error(f"List coaches error: {e}")
         return jsonify([]), 500
 
-@app.route('/user/coach', methods=['GET'])
+@app.route('/user/coach', methods=['GET', 'OPTIONS'])
 def get_user_coach():
     user_id = request.args.get('userId','')
     try:
@@ -191,9 +191,6 @@ def assign_coach():
     except Exception as e:
         app.logger.error(f"Unexpected error in assign_coach: {e}")
         return jsonify({'message': 'サーバーエラー'}), 500
-
-
-
 
 @app.route('/talk', methods=['POST', 'OPTIONS'])
 def handle_talk():
@@ -269,7 +266,7 @@ def handle_talk():
 
     return jsonify({'message': ai_message}), 200
 
-@app.route('/user/history', methods=['GET'])
+@app.route('/user/history', methods=['GET', 'OPTIONS'])
 def get_chat_history():
     user_id = request.args.get('userId', '')
     coach_id = request.args.get('coachId')
