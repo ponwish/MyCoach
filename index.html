@@ -120,6 +120,7 @@
       <li onclick="navigate('chat')">トーク</li>
       <li onclick="navigate('coach')">担当変更</li>
       <li onclick="navigate('history')">履歴</li>
+      <li onclick="logout()">ログアウト</li>
     </ul>
   </div>
   <main>
@@ -450,6 +451,34 @@
 
       document.getElementById('history-area').style.display = 'block';
     }
+
+    async function logout() {
+      try {
+        // Supabaseセッション削除
+        await supabase.auth.signOut();
+
+        // LINEログイン中なら LIFFログアウト
+        if (liff.isLoggedIn()) {
+          liff.logout();
+        }
+
+        // ローカル状態クリア
+        userId = '';
+        suggestionsShown = false;
+
+        // ログイン選択画面に戻す
+        hideAll();
+        document.getElementById('loginSelector').style.display = 'block';
+      } catch (err) {
+        console.error('ログアウト失敗:', err);
+        alert('ログアウトに失敗しました');
+      }
+      document.getElementById('userGoalText').textContent = '読み込み中...';
+      document.getElementById('coachNameText').textContent = '読み込み中...';
+      document.getElementById('chat').innerHTML = '';
+      document.getElementById('talkInput').value = '';
+    }
+
   </script>
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
