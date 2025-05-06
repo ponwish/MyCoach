@@ -112,38 +112,39 @@ def get_status_logs(profile_id):
     except:
         return jsonify([]), 200
 
-@app.route('/goal', methods=['POST', 'OPTIONS'])  # ✅ OPTIONS追加
+@app.route('/goal', methods=['POST', 'OPTIONS'])
 def handle_goal():
     if request.method == 'OPTIONS':
         return '', 204
     data = request.json
-    user_id = data.get('userId', '')
-    goal = (data.get('goal') or '').strip()
-    if not goal:
-        return jsonify({'message': '目標が入力されていません'}), 400
     try:
-        supabase.table('user_goals').upsert(
-            {'user_id': user_id, 'goal': goal, 'updated_at': datetime.utcnow().isoformat()},
-        ).execute()
-    except APIError as e:
-        app.logger.error(f"Goal upsert error: {e}")
-        return jsonify({'message': 'DBエラー'}), 500
-    prompt = f"あなたの目標は「{goal}」です。最初の具体的なアドバイスを1つ提案してください。"
-    resp = openai_client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{'role':'system','content':'プロのコーチです。'}, {'role':'user','content':prompt}],
-        temperature=0.7
-    )
-    return jsonify({'message': resp.choices[0].message.content.strip()}), 200
+        # INSERT による履歴保持型保存
+        supabase.table('user_goals').insert({
+            "user_id": data.get("userId"),
+            "goal": data.get("goal"),
+            "created_at": datetime.utcnow().isoformat()
+        }).execute()
 
-@app.route('/user/goal', methods=['GET'])
-def get_user_goal():
-    user_id = request.args.get('userId','')
+        return jsonify({"message": "OK"}), 200
+    except Exception as e:
+        app.logger.error(f"Goal insert error: {e}")
+        return jsonify({"message": "DBエラー"}), 500
+
+@app.route('/user/goal')
+def get_latest_goal():
+    user_id = request.args.get('userId')
     try:
-        resp = supabase.table('user_goals').select('goal').eq('user_id', user_id).single().execute()
-        return jsonify({'goal': resp.data['goal']}), 200
-    except APIError:
-        return jsonify({'goal': None}), 404
+        response = supabase.table('user_goals') \
+            .select('goal, created_at') \
+            .eq('user_id', user_id) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+        latest = response.data[0] if response.data else {}
+        return jsonify(latest)
+    except Exception as e:
+        app.logger.error(f"Goal fetch error: {e}")
+        return jsonify({}), 500
 
 @app.route('/coaches', methods=['GET'])
 def list_coaches():
