@@ -165,12 +165,17 @@
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         try {
-        // メールリンクから来た場合はセッションを確定する
-        const { error } = await supabase.auth.getSessionFromUrl();
-        if (error) console.error('URLからのセッション確立失敗:', error);
-      } catch (err) {
-        console.error('getSessionFromUrl処理エラー:', err);
-      }
+          // ✅ メールリンクからのログイン処理（v2）
+          const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+
+          if (error) {
+            console.error('セッション交換失敗:', error.message);
+          } else {
+            console.log('セッション交換成功:', data);
+          }
+        } catch (err) {
+          console.error('exchangeCodeForSession処理エラー:', err);
+        }
         // ✅ Supabase セッション確認（ログイン済なら userId を取得）
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
