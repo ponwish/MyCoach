@@ -173,6 +173,7 @@
 
     if (session?.user) {
       userId = session.user.id;
+      localStorage.setItem('supabase-login-success', 'true'); 
       console.log('✅ ログイン成功:', userId);
       showSection('chat');
       return;
@@ -282,6 +283,18 @@
         alert(`ログインエラー: ${error.message}`);
       } else {
         console.log('未ログイン状態');
+      }
+    });
+
+    // 👇 1. メールリンクログイン完了を検知（別タブ → このタブ）
+    window.addEventListener('storage', async (event) => {
+      if (event.key === 'supabase-login-success' && event.newValue === 'true') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          userId = session.user.id;
+          localStorage.removeItem('supabase-login-success');  // フラグ削除
+          showSection('chat');
+        }
       }
     });
 
