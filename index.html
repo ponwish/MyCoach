@@ -108,6 +108,7 @@
     <button class="btn btn-primary w-100 mb-3" onclick="navigate('chat')">💬 チャットをはじめる</button>
     <button class="btn btn-success w-100 mb-3" onclick="navigate('coach')">👨‍🏫 コーチを変更</button>
     <button class="btn btn-secondary w-100" onclick="navigate('history')">📜 チャット履歴を見る</button>
+    <button class="btn btn-outline-secondary w-100 mb-3" onclick="navigate('goal-edit')">🎯 目標を変更</button>
   </div>  
   <div id="loginSelector" style="display: none; text-align: center; padding: 2rem;">
     <h2 class="mb-4">ログイン方法を選んでください</h2>
@@ -135,6 +136,14 @@
       <input type="text" id="goalInput" placeholder="例：TOEIC 900点を目指す" />
       <button class="btn btn-success" onclick="submitGoal()">目標を設定</button>
     </div>
+    <div id="goal-edit-area" class="card" style="display: none;">
+      <h4>現在の目標</h4>
+      <p id="currentGoalText" class="mb-3 text-muted">読み込み中...</p>
+    
+      <h5>新しい目標を設定する</h5>
+      <input type="text" id="goalEditInput" placeholder="例：TOEIC 900点を目指す" />
+      <button class="btn btn-success mt-3" onclick="submitGoalEdit()">変更を保存</button>
+    </div>    
     <div class="card" id="chat-area" style="display:none;">
       <!-- 💬 チャット画面上部：ユーザー情報表示 -->
       <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
@@ -320,17 +329,17 @@
     }
 
     function hideAll() {
-      ['home-area','goal-area','chat-area','coach-select-area','history-area'].forEach(id => {
+      ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
     }
 
-
     function showSection(section) {
       hideAll();
       if (section === 'home') document.getElementById('home-area').style.display = 'block';
-      if (section === 'chat') checkPrerequisites();
       if (section === 'goal') document.getElementById('goal-area').style.display = 'block';
+      if (section === 'goal-edit') loadGoalEdit();
+      if (section === 'chat') checkPrerequisites();
       if (section === 'coach') loadCoachChange();
       if (section === 'history') loadHistory();
     }
@@ -514,6 +523,37 @@
 
       document.getElementById('history-area').style.display = 'block';
     }
+
+    async function loadGoalEdit() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`);
+        const data = await res.json();
+        document.getElementById('currentGoalText').textContent = data.goal || '未設定';
+        document.getElementById('goalEditInput').value = data.goal || '';
+        document.getElementById('goal-edit-area').style.display = 'block';
+      } catch (err) {
+        alert('目標の読み込みに失敗しました');
+      }
+    }
+
+    async function submitGoalEdit() {
+      const goal = document.getElementById('goalEditInput').value.trim();
+      if (!goal) return alert('目標を入力してください');
+
+      const res = await fetch(`${API_BASE_URL}/goal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, goal })
+      });
+
+      if (res.ok) {
+        alert('目標を更新しました');
+        showSection('home');
+      } else {
+        alert('更新に失敗しました');
+      }
+    }
+
 
     async function logout() {
       try {
