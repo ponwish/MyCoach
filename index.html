@@ -154,6 +154,10 @@
     let userId = '';
     let suggestionsShown = false;
     const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
+    const supabase = createClient(
+    'https://kyxneqqadoyqxsmohbop.supabase.co',       // 🔁 実際のプロジェクトURL
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5eG5lcXFhZG95cXhzbW9oYm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3NjMxNTgsImV4cCI6MjA2MTMzOTE1OH0.g6TmCxkj5iYkrntgBWVNM1RbWjWSr4Owyz7jn_q3dYM'                   // 🔁 実際の公開キー
+  );
 
     document.addEventListener('DOMContentLoaded', async () => {
   try {
