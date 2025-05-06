@@ -192,7 +192,12 @@
     }
 
     async function loginWithGoogle() {
-      await supabase.auth.signInWithOAuth({ provider: 'google' });
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: location.href
+        }
+      });
     }
 
     async function loginWithEmail() {
