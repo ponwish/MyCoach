@@ -325,10 +325,11 @@
       }
     });
 
-    function navigate(section) {
+    async function navigate(section) {
       document.getElementById('menu').style.display = 'none';
-      showSection(section);
+      await showSection(section);
     }
+
 
     function hideAll() {
       ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area'].forEach(id => {
@@ -336,15 +337,16 @@
       });
     }
 
-    function showSection(section) {
+    async function showSection(section) {
       hideAll();
       if (section === 'home') document.getElementById('home-area').style.display = 'block';
       if (section === 'goal') document.getElementById('goal-area').style.display = 'block';
-      if (section === 'goal-edit') loadGoalEdit();
-      if (section === 'chat') checkPrerequisites();
-      if (section === 'coach') loadCoachChange();
-      if (section === 'history') loadHistory();
+      if (section === 'goal-edit') await loadGoalEdit();
+      if (section === 'chat') await checkPrerequisites();  // ✅ 非同期処理に await
+      if (section === 'coach') await loadCoachChange();
+      if (section === 'history') await loadHistory();
     }
+
 
 
     function submitGoal() {
