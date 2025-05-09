@@ -2,860 +2,346 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>AIコーチング 2025</title>
+  <title>AIコーチング Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* 全体 */
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #e0f7fa, #e8f4fd);
-      font-family: 'Segoe UI', sans-serif;
-    }
-  
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background: linear-gradient(90deg, #4facfe, #00f2fe);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
-    }
-  
-    header h1 {
-      margin: 0;
-      font-size: 1.25rem;
-      color: #fff;
-    }
-  
-    #hamburger {
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-    }
-  
-    #menu {
-      position: absolute;
-      top: 60px;
-      right: 20px;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-      display: none;
-      z-index: 999;
-    }
-  
-    #menu ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-  
-    #menu li {
-      padding: 12px 20px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-  
-    #menu li:hover {
-      background: #f1f1f1;
-    }
-  
-    main {
-      padding-top: 80px;
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-  
-    .card {
-      width: 100%;
-      max-width: 420px;
-      margin: 20px;
-      padding: 24px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-    }
-  
-    .btn {
-      margin-top: 16px;
-      border-radius: 30px;
-      padding: 12px;
-      font-weight: 600;
-    }
-  
-    .btn-primary {
-      background: #4facfe;
-      border: none;
-      color: #fff;
-    }
-  
-    .btn-primary:hover {
-      background: #00f2fe;
-    }
-  
-    .btn-success {
-      background: #43e97b;
-      border: none;
-      color: #fff;
-    }
-  
-    .btn-success:hover {
-      background: #38d172;
-    }
-  
-   /* ✅ チャット履歴エリア */
-#historyList {
-  max-height: 500px;
-  overflow-y: auto;
-  padding: 12px;
-}
+    /* ===== ベース ===== */
+    body{margin:0;padding:0;background:linear-gradient(135deg,#e0f7fa,#e8f4fd);font-family:'Segoe UI',sans-serif;}
+    header{position:fixed;top:0;left:0;right:0;height:60px;background:linear-gradient(90deg,#4facfe,#00f2fe);
+      display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:1000;}
+    header h1{margin:0;font-size:1.25rem;color:#fff;cursor:pointer;}
+    #hamburger{font-size:1.5rem;background:none;border:none;color:#fff;cursor:pointer;}
+    #menu{position:absolute;top:60px;right:20px;background:#fff;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,.1);display:none;z-index:999;}
+    #menu ul{list-style:none;margin:0;padding:0;}
+    #menu li{padding:12px 20px;cursor:pointer;transition:background .2s;}
+    #menu li:hover{background:#f1f1f1;}
 
-/* 各メッセージ全体のラッパー */
-.chat-message {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 14px;
-}
+    main{padding-top:80px;display:flex;justify-content:center;flex-wrap:wrap;}
+    .card{width:100%;max-width:420px;margin:20px;padding:24px;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.05);}
+    .btn{margin-top:16px;border-radius:30px;padding:12px;font-weight:600;}
+    .btn-primary{background:#4facfe;border:none;color:#fff;}
+    .btn-primary:hover{background:#00f2fe;}
+    .btn-success{background:#43e97b;border:none;color:#fff;}
+    .btn-success:hover{background:#38d172;}
 
-.chat-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid #4facfe;
-  background-color: #fff;
-  object-fit: cover;
-}
+    /* ===== チャット関連 ===== */
+    #historyList{max-height:500px;overflow-y:auto;padding:12px;}
+    .chat-message{display:flex;justify-content:flex-start;margin-bottom:14px;}
+    .chat-icon{width:36px;height:36px;border-radius:50%;border:2px solid #4facfe;background:#fff;object-fit:cover;}
+    .chat-message.user .chat-icon{display:none;}
+    .chat-message.user{justify-content:flex-end;}
+    .chat-bubble-container{display:flex;flex-direction:column;align-items:flex-start;max-width:80%;}
+    .chat-message.user .chat-bubble-container{align-items:flex-end;}
+    .chat-bubble{padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.5;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+    .chat-message.user .chat-bubble{background:#dcf8c6;border-bottom-right-radius:0;}
+    .chat-message.assistant .chat-bubble{background:#f1f0f0;border-bottom-left-radius:0;}
+    .chat-timestamp{font-size:11px;color:#999;margin-top:4px;text-align:right;}
+    #suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px;}
+    #suggestions .btn-light{background:#fff;border:1px solid #ddd;border-radius:20px;padding:6px 12px;font-size:.85rem;}
+    .chat-container{max-height:500px;overflow-y:auto;padding:10px;}
 
+    /* 入力 */
+    .input-group textarea{resize:none;}
+    #sendButton{min-width:70px;}
 
-.chat-message.user .chat-icon {
-  display: none;
-}
-
-/* ユーザーとAIで位置を切り替え */
-.chat-message.user {
-  justify-content: flex-end;
-}
-
-.chat-bubble-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  max-width: 80%;
-}
-
-.chat-message.user .chat-bubble-container {
-  align-items: flex-end;
-}
-
-/* 吹き出し本体 */
-.chat-bubble {
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 14px;
-  line-height: 1.5;
-  word-wrap: break-word;
-  background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-  max-width: 100%;
-}
-
-.chat-message.user .chat-bubble {
-  background-color: #dcf8c6;
-  border-bottom-right-radius: 0;
-}
-
-.chat-message.assistant .chat-bubble {
-  background-color: #f1f0f0;
-  border-bottom-left-radius: 0;
-}
-
-/* タイムスタンプ（吹き出し下） */
-.chat-timestamp {
-  font-size: 11px;
-  color: #999;
-  margin-top: 4px;
-  text-align: right;
-}
-
-/* 日付区切りラベル */
-.chat-date-separator {
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  margin: 12px 0;
-}
-
-/* 提案ボタンエリア */
-#suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-#suggestions .btn-light {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-}
-
-/* 入力関連 */
-input, select {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: #4facfe;
-  box-shadow: 0 0 4px rgba(79, 172, 254, 0.5);
-}
-
-.chat-container {
-  max-height: 500px;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-.input-group textarea {
-  resize: none;
-}
-
-#sendButton {
-  min-width: 70px;
-}
-
-/* ユーティリティ */
-.fw-bold { font-weight: bold; }
-.my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
-.small { font-size: 0.875em; }
-.text-muted { color: #6c757d; }
-
-/* GPTローディングアニメーション */
-.typing::after {
-  content: '...';
-  animation: dots 1s steps(3, end) infinite;
-}
-
-@keyframes dots {
-  0% { content: ''; }
-  33% { content: '.'; }
-  66% { content: '..'; }
-  100% { content: '...'; }
-}
-
+    /* GPT dots */
+    .typing::after{content:'.';animation:dots 1s steps(3,end) infinite;}
+    @keyframes dots{0%{content:'';}33%{content:'.';}66%{content:'..';}100%{content:'...';}}
   </style>
-  
 </head>
 <body>
-  <div id="loginSelector" style="display: none; text-align: center; padding: 2rem;">
-    <h2 class="mb-4">ログイン方法を選んでください</h2>
-    <button onclick="loginWithLine()" class="btn btn-success m-2">LINEでログイン</button>
-    <button onclick="loginWithEmail()" class="btn btn-primary m-2">メールでログイン</button>
-    <button onclick="loginWithGoogle()" class="btn btn-danger m-2">Googleでログイン</button>
+
+<!-- ===== ヘッダ ===== -->
+<header id="mainHeader">
+  <h1 onclick="navigate('home')">MyCoach</h1>
+  <button id="hamburger">☰</button>
+</header>
+
+<!-- ===== メニュー ===== -->
+<div id="menu">
+  <ul>
+    <li onclick="navigate('home')">ホーム</li>
+    <li onclick="navigate('chat')">トーク</li>
+    <li onclick="navigate('coach')">担当変更</li>
+    <li onclick="navigate('history')">履歴</li>
+    <li onclick="navigate('goal-edit')">目標変更</li>
+    <li onclick="logout()">ログアウト</li>
+  </ul>
+</div>
+
+<!-- ===== メイン ===== -->
+<main>
+  <!-- ホーム -->
+  <div id="home-area" class="card">
+    <h4 class="mb-4 text-center">AIコーチング メニュー</h4>
+    <button class="btn btn-primary w-100 mb-3" onclick="navigate('chat')">💬 チャットをはじめる</button>
+    <button class="btn btn-success w-100 mb-3" onclick="navigate('coach')">👨‍🏫 コーチを変更</button>
+    <button class="btn btn-secondary w-100"      onclick="navigate('history')">📜 チャット履歴を見る</button>
+    <button class="btn btn-outline-secondary w-100" onclick="navigate('goal-edit')">🎯 目標を変更</button>
   </div>
-  <header id="mainHeader" style="display: none;">
-    <img src="Resource\image\MyCoach_LOGO.png" alt="MyCoach" id="logo" style="height: 42px; cursor: pointer;" />
-    <button id="hamburger">☰</button>
-  </header>  
-  <div id="home-area" class="card" style="display:none;">
-    <h4 class="mb-4 text-center">AIコーチング メニュー</h4>
-    <button class="btn btn-primary w-100 mb-3" onclick="navigate('chat')">💬 チャットをはじめる</button>
-    <button class="btn btn-success w-100 mb-3" onclick="navigate('coach')">👨‍🏫 コーチを変更</button>
-    <button class="btn btn-secondary w-100" onclick="navigate('history')">📜 チャット履歴を見る</button>
-    <button class="btn btn-outline-secondary w-100 mb-3" onclick="navigate('goal-edit')">🎯 目標を変更</button>
-  </div>  
-  <div id="emailLoginArea" class="card" style="display: none;">
-    <h4>メールでログイン</h4>
-    <input type="email" id="emailInput" placeholder="メールアドレスを入力してください" />
-    <button class="btn btn-success mt-2" onclick="submitEmailLogin()">ログインリンクを送信</button>
-    <div id="emailLoginMessage" class="mt-3 text-muted small"></div>
-  </div> 
-  <div id="menu">
-    <ul>
-      <li onclick="navigate('home')">ホーム</li>
-      <li onclick="navigate('chat')">トーク</li>
-      <li onclick="navigate('coach')">担当変更</li>
-      <li onclick="navigate('history')">履歴</li>
-      <li onclick="navigate('goal-edit')">目標確認＆変更</li>
-      <li onclick="confirmLogout()">ログアウト</li>
-    </ul>
+
+  <!-- 目標新規設定 -->
+  <div id="goal-area" class="card" style="display:none;">
+    <h4>あなたの目標を教えてください</h4>
+    <input type="text" id="goalInput" placeholder="例：TOEIC 900点を目指す" />
+    <button class="btn btn-success" onclick="submitGoal()">目標を設定</button>
   </div>
-  <main>
-    <div class="card" id="goal-area" style="display:none;">
-      <h4>あなたの目標を教えてください</h4>
-      <input type="text" id="goalInput" placeholder="例：TOEIC 900点を目指す" />
-      <button class="btn btn-success" onclick="submitGoal()">目標を設定</button>
+
+  <!-- 目標変更 -->
+  <div id="goal-edit-area" class="card" style="display:none;">
+    <h4>現在の目標</h4>
+    <p id="currentGoalText" class="mb-3 text-muted">読み込み中...</p>
+    <h5>新しい目標を設定する</h5>
+    <input type="text" id="goalEditInput" placeholder="例：TOEIC 900点を目指す" />
+    <button class="btn btn-success mt-3" onclick="submitGoalEdit()">変更を保存</button>
+  </div>
+
+  <!-- チャット -->
+  <div id="chat-area" class="card" style="display:none;">
+    <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
+      <div><strong>🎯 目標：</strong><span id="userGoalText">読み込み中...</span></div>
+      <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText">読み込み中...</span></div>
     </div>
-    <div id="goal-edit-area" class="card" style="display: none;">
-      <h4>現在の目標</h4>
-      <p id="currentGoalText" class="mb-3 text-muted">読み込み中...</p>
-    
-      <h5>新しい目標を設定する</h5>
-      <input type="text" id="goalEditInput" placeholder="例：TOEIC 900点を目指す" />
-      <button class="btn btn-success mt-3" onclick="submitGoalEdit()">変更を保存</button>
-    </div>    
-    <div class="card" id="chat-area" style="display:none;">
-      <!-- 💬 チャット画面上部：ユーザー情報表示 -->
-      <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
-        <div><strong>🎯 目標：</strong><span id="userGoalText">読み込み中...</span></div>
-        <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText">読み込み中...</span></div>
-      </div>
-      <div id="suggestions"></div>
-      <div id="chat" class="chat-container"></div>
-      <!-- ✅ 入力エリア：textarea＋送信ボタン -->
-      <div class="input-group mt-3">
-        <textarea id="talkInput" class="form-control" rows="2" placeholder="悩みや質問を入力してください（Shift+Enterで改行）"></textarea>
-        <button id="sendButton" class="btn btn-primary" onclick="sendTalk()">送信</button>
-      </div>
+    <div id="suggestions"></div>
+    <div id="chat" class="chat-container"></div>
+    <div class="input-group mt-3">
+      <textarea id="talkInput" class="form-control" rows="2" placeholder="悩みや質問を入力してください（Shift+Enterで改行）"></textarea>
+      <button id="sendButton" class="btn btn-primary" onclick="sendTalk()">送信</button>
     </div>
-    <div class="card" id="coach-select-area" style="display:none;">
-      <h4>担当コーチを選択</h4>
-      <select id="coachSelect"><option value="">-- 選択してください --</option></select>
-      <button class="btn btn-success" onclick="confirmCoach()">確定</button>
-    </div>
-    <!-- 履歴エリア -->
-    <div class="card" id="history-area" style="display: none;">
-      <h4 class="text-center mb-3">チャット履歴</h4>
-      <select id="historyFilterSelect" class="form-select mb-3">
-        <option value="">―― 全コーチ ――</option>
-      </select>
-      <div id="historyList" class="chat-history-container"></div>
-    </div>
-  </main>
-
-  <script>
-    const API_BASE_URL = 'https://mycoach.onrender.com';
-    let userId = '';
-    let suggestionsShown = false;
-    let sessionPollingInterval = null;
-    const suggestionTexts = ['目標を確認したい','モチベーションが下がってきた'];
-
-    document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    // ✅ Supabase セッション確認（メールリンクでもここで取得可）
-    const { data: { session }, error } = await supabase.auth.getSession();
-
-    if (error) {
-      console.error('セッション取得エラー:', error.message);
-    }
-
-    if (session?.user) {
-      userId = session.user.id;
-      localStorage.setItem('supabase-login-success', 'true');
-      console.log('✅ ログイン成功:', userId);
-      document.getElementById('mainHeader').style.display = 'flex';  // ← これを追加
-      showSection('home');
-      return;
-    }
-
-
-    // ✅ LINEログイン（LIFF）確認
-    await liff.init({ liffId: '2007334673-1dVleAwO' });
-
-    if (liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      userId = profile.userId;
-
-      if (!userId) throw new Error("userId取得失敗");
-
-      showSection('home');
-      return;
-    }
-
-    // ✅ ログイン未済：選択画面を表示
-    document.getElementById('loginSelector').style.display = 'block';
-
-  } catch (err) {
-    console.error('ログイン初期化エラー:', err);
-    alert('ログイン処理に失敗しました。再読み込みしてください。');
-  }
-
-  startPollingSession();
-});
-
-    function startPollingSession() {
-      if (sessionPollingInterval) return; // 二重防止
-
-      sessionPollingInterval = setInterval(async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (session?.user) {
-          clearInterval(sessionPollingInterval);
-          userId = session.user.id;
-          showSection('home');
-        }
-      }, 1000); // 1秒おきにチェック
-    }
-
-    function loginWithLine() {
-      if (!liff.isLoggedIn()) {
-        liff.login();
-      }
-    }
-
-    async function loginWithGoogle() {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: location.href
-        }
-      });
-    }
-
-    function loginWithEmail() {
-      // App内UIを表示する方式に切り替え（従来のpromptは不要）
-      document.getElementById('loginSelector').style.display = 'none';
-      document.getElementById('emailLoginArea').style.display = 'block';
-    }
-
-    async function submitEmailLogin() {
-      const email = document.getElementById('emailInput').value.trim();
-      const messageEl = document.getElementById('emailLoginMessage');
-
-      if (!email) {
-        messageEl.textContent = 'メールアドレスを入力してください。';
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.href  // 現在のURLに戻す
-        }
-      });
-
-      if (error) {
-        messageEl.textContent = `エラー: ${error.message}`;
-      } else {
-        messageEl.textContent = 'ログインリンクを送信しました。メールをご確認ください。';
-      }
-    }
-
-
-
-    document.getElementById('talkInput').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        if (!e.shiftKey) {
-          e.preventDefault();           // 改行をキャンセル
-          document.getElementById('suggestions').style.display = 'none';  // 💡あれば非表示
-          sendTalk();                   // 通常送信
-        }
-        // shiftKeyあり：改行するので何もしない
-      }
-    });
-    
-    window.addEventListener('load', async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (session?.user) {
-        alert(`ログイン成功！ユーザID: ${session.user.id}`);
-        console.log('ユーザ情報:', session.user);
-      } else if (error) {
-        alert(`ログインエラー: ${error.message}`);
-      } else {
-        console.log('未ログイン状態');
-      }
-    });
-
-    // 👇 1. メールリンクログイン完了を検知（別タブ → このタブ）
-    window.addEventListener('storage', async (event) => {
-      if (event.key === 'supabase-login-success' && event.newValue === 'true') {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          userId = session.user.id;
-          localStorage.removeItem('supabase-login-success');  // フラグ削除
-          showSection('home');
-        }
-      }
-    });
-
-    document.getElementById('hamburger').addEventListener('click', () => {
-      const menu = document.getElementById('menu');
-      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    });
-    document.addEventListener('click', e => {
-      if (!e.target.closest('#menu') && e.target.id !== 'hamburger') {
-        document.getElementById('menu').style.display = 'none';
-      }
-    });
-
-    async function navigate(section) {
-      document.getElementById('menu').style.display = 'none';
-      await showSection(section);
-    }
-
-
-    function hideAll() {
-      ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-      });
-    }
-
-    async function showSection(section) {
-      hideAll();
-
-      // ✅ ログイン済みの場合のみヘッダ表示
-      if (userId) {
-        document.getElementById('mainHeader').style.display = 'flex';
-      } else {
-        document.getElementById('mainHeader').style.display = 'none';
-      }
-
-      if (section === 'home') document.getElementById('home-area').style.display = 'block';
-      if (section === 'goal') document.getElementById('goal-area').style.display = 'block';
-      if (section === 'goal-edit') await loadGoalEdit();
-      if (section === 'chat') await checkPrerequisites();
-      if (section === 'coach') await loadCoachChange();
-      if (section === 'history') await loadHistory();
-    }
-    document.getElementById('logo').addEventListener('click', () => {
-      showSection('home');
-    });
-
-    function submitGoal() {
-      const goal = document.getElementById('goalInput').value.trim();
-      if (!goal) return alert('目標を入力してください');
-      fetch(`${API_BASE_URL}/goal`, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ userId, goal })
-      }).then(r => r.ok ? showSection('coach') : alert('設定失敗'));
-    }
-
-    async function checkPrerequisites() {
-      console.log('🔍 checkPrerequisites 開始');
-      hideAll(); // ← 先に全非表示化してから制御スタート
-      if (!userId) {
-        try {
-          const profile = await liff.getProfile();
-          userId = profile.userId;
-          console.log('✅ LIFF userId:', userId);
-        } catch (err) {
-          alert("ユーザー情報の取得に失敗しました");
-          console.error('🛑 LIFFエラー:', err);
-          return showSection('goal');
-        }
-      }
-
-      let goal = '';
-      try {
-        const res = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`);
-        const raw = await res.text();
-        console.log('📦 goal raw text:', raw);
-
-        const data = JSON.parse(raw);
-        goal = (data?.goal || '').replace(/^[\s\u3000]+|[\s\u3000]+$/g, ''); // 半角/全角スペースtrim
-
-        console.log('🎯 goal:', goal);
-        console.log('📦 goal raw:', data.goal);
-        console.log('📦 goal typeof:', typeof data.goal);
-        console.log('📦 goal after clean:', goal);
-        console.log('📦 goal length:', goal.length);
-
-        document.getElementById('userGoalText').textContent = goal || '未設定';
-      } catch (err) {
-        alert('チャットを利用するには、まず目標の設定が必要です。');
-        console.error('🛑 goal取得エラー:', err);
-        return showSection('goal');
-      }
-
-      if (!goal) {
-        alert('チャットを利用するには、まず目標の設定が必要です。');
-        return showSection('goal');
-      }
-
-      let coachName = '';
-      try {
-        const mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.json());
-        const coachList = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
-        const coach = coachList.find(c => c.id === mapping.coachId);
-        coachName = coach?.name || '';
-        document.getElementById('coachNameText').textContent = coachName || '未設定';
-
-        if (!mapping.coachId) {
-          alert('チャットを利用するには、担当コーチの選択が必要です。');
-          return showSection('coach');
-        }
-      } catch (err) {
-        console.error("🛑 コーチ取得エラー:", err);
-        alert('チャットを利用するには、担当コーチの選択が必要です。');
-        return showSection('coach');
-      }
-
-      // ✅ 条件満たしたのでチャット表示
-      console.log('✅ 目標・コーチが揃ったのでチャットを表示');
-      document.getElementById('chat-area').style.display = 'block';
-
-      const suggestions = document.getElementById('suggestions');
-      if (!suggestionsShown) {
-        renderSuggestions();
-        suggestions.style.display = 'flex';
-        suggestionsShown = true;
-      } else {
-        suggestions.style.display = 'none';
-      }
-    }
-
-
-    function renderSuggestions() {
-      const container = document.getElementById('suggestions'); container.innerHTML = ''; 
-      suggestionTexts.forEach(text => {
-        const btn = document.createElement('button'); btn.className = 'btn btn-light btn-sm'; btn.textContent = text;
-        btn.onclick = () => { document.getElementById('talkInput').value = text; document.getElementById('talkInput').focus(); };
-        container.appendChild(btn);
-      });
-    }
-
-    function sendTalk() {
-      if (!userId) return alert('ユーザー情報が取得できていません');
-
-      const message = document.getElementById('talkInput').value.trim();
-      if (!message) return;
-
-      // ✅ サジェスチョン非表示
-      document.getElementById('suggestions').style.display = 'none';
-
-      const chat = document.getElementById('chat');
-
-      // 💬 ユーザーメッセージ表示
-      const userMsgDiv = document.createElement('div');
-      userMsgDiv.className = 'chat-message user';
-      userMsgDiv.innerHTML = `
-        <div class="chat-bubble-container">
-          <div class="chat-bubble">${message}</div>
-          <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-          `;
-      chat.appendChild(userMsgDiv);
-      document.getElementById('talkInput').value = '';
-
-      // 🔄 GPTのローディングバブル追加
-      const loadingDiv = document.createElement('div');
-      loadingDiv.className = 'message ai-message';
-      loadingDiv.id = 'typing-indicator';
-      loadingDiv.innerHTML = `<div class="bubble"><span class="typing">...</span></div>`;
-      chat.appendChild(loadingDiv);
-      chat.scrollTop = chat.scrollHeight;
-
-      console.log('📤 メッセージ送信:', message);
-
-      fetch(`${API_BASE_URL}/talk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, message })
-      })
-      .then(res => res.json())
-      .then(data => {
-        console.log('📩 サーバーからの応答:', data);
-
-        // 🚧 チェック条件
-        if (data.requireGoal) {
-          alert('目標設定が必要です。');
-          return showSection('goal');
-        }
-        if (data.requireCoach) {
-          alert('コーチ選択が必要です。');
-          return showSection('coach');
-        }
-
-        // ⛔️ typingを削除
-        const typingEl = document.getElementById('typing-indicator');
-        if (typingEl) typingEl.remove();
-
-        // ✅ GPTの返答が存在するかチェック
-        if (!data.message || typeof data.message !== 'string') {
-          console.warn('⚠️ GPTからの応答が無効です:', data.message);
-          const errorMsg = document.createElement('div');
-          errorMsg.className = 'message ai-message';
-          errorMsg.innerHTML = `<div class="bubble">⚠️ 応答の取得に失敗しました</div>`;
-          chat.appendChild(errorMsg);
-          return;
-        }
-
-        <!-- 🤖 GPTメッセージを表示（アイコン付き） -->
-        const aiMsgDiv = document.createElement('div');
-        aiMsgDiv.className = 'chat-message assistant';
-        aiMsgDiv.innerHTML = `
-          <img src="/Resource/image/coach_icon.png" alt="Coach Icon" class="chat-icon" />
-          <div class="chat-bubble-container">
-            <div class="chat-bubble">${data.message}</div>
-            <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
-          </div>
-        `;
-        chat.appendChild(aiMsgDiv);
-        chat.scrollTop = chat.scrollHeight;
-
-        console.log('✅ チャット画面に応答を追加しました:', data.message);
-      })
-      .catch(error => {
-        console.error('🛑 fetchエラー:', error);
-        alert('サーバーとの通信に失敗しました');
-      });
-    }
-
-
-    async function loadCoachChange() {
-      hideAll();
-      let mapping;
-      try { mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.ok ? r.json() : Promise.reject()); } catch { mapping = null; }
-      const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
-      const select = document.getElementById('coachSelect'); select.innerHTML = '<option value="">-- 選択してください --</option>';
-      coaches.forEach(c => {
-        const opt = document.createElement('option'); opt.value = c.id; opt.text = `${c.code_id} ${c.name}`;
-        if (mapping && mapping.coachId === c.id) opt.selected = true;
-        select.appendChild(opt);
-      });
-      document.getElementById('coach-select-area').style.display = 'block';
-    }
-
-    function confirmCoach() {
-      const coachId = document.getElementById('coachSelect').value;
-      if (!coachId) return alert('選択してください');
-      fetch(`${API_BASE_URL}/user/assign_coach`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, coachId }) })
-        .then(res => res.ok && showSection('chat'));
-    }
-
-    async function loadHistory() {
-      hideAll();
-      const filter = document.getElementById('historyFilterSelect');
-      if (filter.options.length <= 1) {
-        const coaches = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
-        filter.innerHTML = '<option value="">―― 全コーチ ――</option>';
-        coaches.forEach(c => filter.appendChild(new Option(`${c.code_id} ${c.name}`, c.id)));
-        filter.addEventListener('change', loadHistory);
-      }
-
-      const params = new URLSearchParams({ userId });
-      if (filter.value) params.append('coachId', filter.value);
-      const history = await fetch(`${API_BASE_URL}/user/history?${params}`).then(r => r.json());
-
-      const container = document.getElementById('historyList');
-      container.innerHTML = '';
-
-      let lastDate = null;
-      history.forEach(msg => {
-        const dateObj = new Date(msg.created_at);
-        const dateStr = dateObj.toLocaleDateString('ja-JP');
-        const timeStr = dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-
-        if (lastDate !== dateStr) {
-          const dateHeader = document.createElement('div');
-          dateHeader.className = 'chat-date-separator';
-          dateHeader.textContent = `🗓 ${dateStr}`;
-          container.appendChild(dateHeader);
-          lastDate = dateStr;
-        }
-
-        const msgWrapper = document.createElement('div');
-        msgWrapper.className = `chat-message ${msg.role === 'user' ? 'user' : 'assistant'}`;
-        if (msg.role === 'assistant') {
-          msgWrapper.innerHTML = `
-            <img src="/Resource/image/coach_icon.png" alt="Coach Icon" class="chat-icon" />
-            <div class="chat-bubble-container">
-              <div class="chat-bubble">${msg.content}</div>
-              <div class="chat-timestamp">${timeStr}</div>
-            </div>
-          `;
-        } else {
-          msgWrapper.innerHTML = `
-            <div class="chat-bubble-container">
-              <div class="chat-bubble">${msg.content}</div>
-              <div class="chat-timestamp">${timeStr}</div>
-            </div>
-          `;
-        }
-        container.appendChild(msgWrapper);
-      });
-
-      document.getElementById('history-area').style.display = 'block';
-    }
-
-    async function loadGoalEdit() {
-      try {
-        const res = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`);
-        const data = await res.json();
-        document.getElementById('currentGoalText').textContent = data.goal || '未設定';
-        document.getElementById('goalEditInput').value = data.goal || '';
-        document.getElementById('goal-edit-area').style.display = 'block';
-      } catch (err) {
-        alert('目標の読み込みに失敗しました');
-      }
-    }
-
-    async function submitGoalEdit() {
-      const goal = document.getElementById('goalEditInput').value.trim();
-      if (!goal) return alert('目標を入力してください');
-
-      const res = await fetch(`${API_BASE_URL}/goal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, goal })
-      });
-
-      if (res.ok) {
-        alert('目標を更新しました');
-        showSection('home');
-      } else {
-        alert('更新に失敗しました');
-      }
-    }
-
-    function confirmLogout() {
-  if (confirm("ログアウトしますか？")) {
-    logout();
-  }
-}
-
-    async function logout() {
-      try {
-        await supabase.auth.signOut();
-        if (liff.isLoggedIn()) liff.logout();
-
-        userId = '';
-        suggestionsShown = false;
-
-        hideAll();
-        document.getElementById('loginSelector').style.display = 'block';
-        document.getElementById('mainHeader').style.display = 'none'; // ← これを追加
-      } catch (err) {
-        console.error('ログアウト失敗:', err);
-        alert('ログアウトに失敗しました');
-      }
-      document.getElementById('userGoalText').textContent = '読み込み中...';
-      document.getElementById('coachNameText').textContent = '読み込み中...';
-      document.getElementById('chat').innerHTML = '';
-      document.getElementById('talkInput').value = '';
-    }
-
-
-  </script>
+  </div>
+
+  <!-- コーチ選択 -->
+  <div id="coach-select-area" class="card" style="display:none;">
+    <h4>担当コーチを選択</h4>
+    <select id="coachSelect"><option value="">-- 選択してください --</option></select>
+    <button class="btn btn-success" onclick="confirmCoach()">確定</button>
+  </div>
+
+  <!-- 履歴 -->
+  <div id="history-area" class="card" style="display:none;">
+    <h4 class="text-center mb-3">チャット履歴</h4>
+    <select id="historyFilterSelect" class="form-select mb-3">
+      <option value="">―― 全コーチ ――</option>
+    </select>
+    <div id="historyList" class="chat-history-container"></div>
+  </div>
+</main>
+
+<!-- ===== Supabase JS 読み込み ===== -->
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
   const supabase = createClient(
     'https://kyxneqqadoyqxsmohbop.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5eG5lcXFhZG95cXhzbW9oYm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3NjMxNTgsImV4cCI6MjA2MTMzOTE1OH0.g6TmCxkj5iYkrntgBWVNM1RbWjWSr4Owyz7jn_q3dYM'
+    'PUBLIC_ANON_KEY'          /* ← anon キーに置換 */
   );
+  window.supabase = supabase;
+</script>
 
-  window.supabase = supabase; // ✅ グローバル公開して通常スクリプトと連携
+<!-- ===== アプリロジック ===== -->
+<script>
+  const API_BASE_URL = 'https://mycoach.onrender.com';
+  const LOGIN_PAGE   = '/static/user_login.html';
+
+  let userId = localStorage.getItem('userId') || '';
+  if (!userId) location.replace(LOGIN_PAGE);
+
+  /* --- util: XSS 対策 --- */
+  const escapeHtml = s => s.replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  /* ---------------- メニュー開閉 ---------------- */
+  document.getElementById('hamburger').onclick = ()=>{
+    const m=document.getElementById('menu');
+    m.style.display = (m.style.display==='block') ? 'none' : 'block';
+  };
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('#menu') && e.target.id!=='hamburger'){
+      document.getElementById('menu').style.display='none';
+    }
+  });
+
+  /* ---------------- ナビゲーション ---------------- */
+  function hideAll(){
+    ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area']
+      .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  }
+  function showSection(s){
+    hideAll();
+    const map={home:'home-area',chat:'chat-area',coach:'coach-select-area',
+               history:'history-area','goal-edit':'goal-edit-area',goal:'goal-area'};
+    document.getElementById(map[s]).style.display='block';
+    if(s==='chat') initSuggestions();
+  }
+  function navigate(s){document.getElementById('menu').style.display='none';showSection(s);}
+  showSection('home');
+
+  /* ---------------- ログアウト ---------------- */
+  function logout(){
+    localStorage.removeItem('userId');
+    supabase.auth.signOut().catch(()=>{});
+    location.replace(LOGIN_PAGE);
+  }
+
+  /* ---------------- 目標設定／変更 ---------------- */
+  function submitGoal(){
+    const goal=document.getElementById('goalInput').value.trim();
+    if(!goal)return alert('目標を入力してください');
+    fetch(`${API_BASE_URL}/goal`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId,goal})
+    }).then(r=>r.ok?showSection('coach'):alert('設定失敗'));
+  }
+  async function submitGoalEdit(){
+    const goal=document.getElementById('goalEditInput').value.trim();
+    if(!goal)return alert('目標を入力してください');
+    const res=await fetch(`${API_BASE_URL}/goal`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId,goal})
+    });
+    res.ok? (alert('更新しました'),showSection('home')):alert('失敗');
+  }
+
+  /* ---------- コーチ一覧をロード ---------- */
+  async function loadCoachList() {
+    const res = await fetch(`${API_BASE_URL}/coaches`);
+    const coaches = await res.json();
+    const select  = document.getElementById('coachSelect');
+    const filter  = document.getElementById('historyFilterSelect');
+    coaches.forEach(c=>{
+      const txt = `${c.name || '(名称未設定)'}（${c.code_id}）`;
+      const opt1=new Option(txt, c.id);
+      const opt2=new Option(txt, c.id);
+      select.add(opt1); filter.add(opt2);
+    });
+  }
+  window.addEventListener('DOMContentLoaded', loadCoachList);
+
+  /* ---------------- コーチ確定 ---------------- */
+  function confirmCoach(){
+    const coachId=document.getElementById('coachSelect').value;
+    if(!coachId)return alert('選択してください');
+    fetch(`${API_BASE_URL}/user/assign_coach`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId,coachId})
+    }).then(r=>r.ok&&showSection('chat'));
+  }
+
+  /* ---------------- サジェスチョン ---------------- */
+  let suggestionsShown=false;
+  function initSuggestions(){
+    if(suggestionsShown) return;
+    const sugDiv = document.getElementById('suggestions');
+    ['今週の達成目標を決めたい','モチベーションが落ちています','学習スケジュールの最適化']
+      .forEach(text=>{
+        const b=document.createElement('button');
+        b.className='btn btn-light'; b.textContent=text;
+        b.onclick=()=>{document.getElementById('talkInput').value=text; sendTalk();};
+        sugDiv.appendChild(b);
+      });
+    suggestionsShown = true;
+  }
+
+  /* ---------------- チャット送信 ---------------- */
+  function sendTalk(){
+    const raw=document.getElementById('talkInput').value;
+    const message=raw.trim();
+    if(!message)return;
+    const chat=document.getElementById('chat');
+
+    /* ユーザーバブル */
+    chat.insertAdjacentHTML('beforeend',`
+      <div class="chat-message user">
+        <div class="chat-bubble-container">
+          <div class="chat-bubble">${escapeHtml(message)}</div>
+          <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`);
+    document.getElementById('talkInput').value='';
+
+    /* GPTローディング */
+    const loadingId='typing-'+Date.now();
+    chat.insertAdjacentHTML('beforeend',`
+      <div id="${loadingId}" class="chat-message assistant">
+        <img src="/Resource/image/Coach_icon/coach_icon_1.png" class="chat-icon" alt="AI">
+        <div class="chat-bubble-container"><div class="chat-bubble typing"></div></div>
+      </div>`);
+    chat.scrollTop = chat.scrollHeight;
+
+    fetch(`${API_BASE_URL}/talk`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId,message})
+    })
+    .then(r=>r.json())
+    .then(d=>{
+      document.getElementById(loadingId)?.remove();
+
+      if(d.requireGoal) return alert('目標設定が必要です'), showSection('goal');
+      if(d.requireCoach) return alert('コーチ選択が必要です'), showSection('coach');
+
+      chat.insertAdjacentHTML('beforeend',`
+        <div class="chat-message assistant">
+          <img src="/Resource/image/Coach_icon/coach_icon_1.png" class="chat-icon" alt="AI">
+          <div class="chat-bubble-container">
+            <div class="chat-bubble">${escapeHtml(d.message||'エラーが発生しました')}</div>
+            <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        </div>`);
+      chat.scrollTop = chat.scrollHeight;
+    })
+    .catch(e=>{alert('通信エラー');console.error(e);});
+  }
+
+  /* Shift+Enter = 改行 / Enter = 送信 */
+  document.getElementById('talkInput').addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendTalk();}
+  });
+
+  /* ---------------- 履歴 ---------------- */
+  window.addEventListener('DOMContentLoaded', () => {
+    loadCurrentGoal();
+    loadCoachName();
+    loadHistory();
+  });
+
+  async function loadCurrentGoal(){
+    const r = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`);
+    const d = await r.json();
+    document.getElementById('userGoalText').textContent   = d.goal || '未設定';
+    document.getElementById('currentGoalText').textContent= d.goal || '未設定';
+  }
+  async function loadCoachName(){
+    const r = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`);
+    const d = await r.json();
+    if(d.coachId){
+      const nameRes = await fetch(`${API_BASE_URL}/coach/profile?coachId=${d.coachId}`);
+      const p = await nameRes.json();
+      document.getElementById('coachNameText').textContent = p.name || '(未設定)';
+      document.getElementById('coachSelect').value = d.coachId;
+    }
+  }
+
+  async function loadHistory(){
+    const sel=document.getElementById('historyFilterSelect');
+    const coachId=sel.value||'';
+    const qs=new URLSearchParams({userId,coachId});
+    const r=await fetch(`${API_BASE_URL}/user/history?${qs}`);
+    const list=await r.json();
+    const div=document.getElementById('historyList');
+    div.innerHTML='';
+    list.forEach(m=>{
+      div.insertAdjacentHTML('beforeend',`
+        <div class="chat-message ${(m.role==='user')?'user':'assistant'}">
+          ${m.role==='assistant'?'<img src="/Resource/image/Coach_icon/coach_icon_1.png" class="chat-icon">':''}
+          <div class="chat-bubble-container">
+            <div class="chat-bubble">${escapeHtml(m.content)}</div>
+            <div class="chat-timestamp">${new Date(m.created_at).toLocaleString()}</div>
+          </div>
+        </div>`);
+    });
+  }
+  document.getElementById('historyFilterSelect').addEventListener('change',loadHistory);
 </script>
 </body>
 </html>
