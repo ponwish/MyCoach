@@ -10,6 +10,10 @@
     .card{max-width:420px;margin:auto;top:50%;transform:translateY(20%);box-shadow:0 4px 10px rgba(0,0,0,.07)}
     .oauth-btn img{height:20px;margin-right:6px}
   </style>
+  <!-- ✅ Supabase の URL をフロントで参照できるよう定義 -->
+  <script>
+    const SUPABASE_URL = "https://kyxneqqadoyqxsmohbop.supabase.co"; /* ここをプロジェクト URL に置換 */
+  </script>
 </head>
 <body>
   <div class="card p-4">
@@ -49,9 +53,9 @@
   const API = 'https://mycoach.onrender.com';
 
   function oauthSignIn(provider){
-    // Supabase の OAuth リダイレクト URL を生成
     const redirect = encodeURIComponent(location.origin + '/index.html');
-    location.href = `https://${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirect}`;
+    location.href =
+      `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirect}`;
   }
 
   async function emailSignIn(){
@@ -64,9 +68,15 @@
         body:JSON.stringify({email,password:pass})
       });
       const j = await r.json();
-      if(r.ok){ localStorage.setItem('userId',j.userId); location.href='index.html'; }
-      else    { inMsg.textContent=j.error||'失敗'; inMsg.style.color='red'; }
-    }catch{ inMsg.textContent='通信エラー'; inMsg.style.color='red'; }
+      if(r.ok){
+        localStorage.setItem('userId',j.userId);
+        location.href='index.html';
+      }else{
+        inMsg.textContent=j.error||'失敗'; inMsg.style.color='red';
+      }
+    }catch{
+      inMsg.textContent='通信エラー'; inMsg.style.color='red';
+    }
   }
 
   async function emailSignUp(){
@@ -79,9 +89,16 @@
         body:JSON.stringify({name,email,password:pass})
       });
       const j=await r.json();
-      if(r.ok){ upMsg.textContent='登録完了！ログインしてください'; upMsg.style.color='green'; }
-      else    { upMsg.textContent=j.error||'失敗'; upMsg.style.color='red'; }
-    }catch{ upMsg.textContent='通信エラー'; upMsg.style.color='red'; }
+      if(r.ok){
+        upMsg.textContent='登録完了！ログインしてください';
+        upMsg.style.color='green';
+        // 自動でサインインしても良い場合はここで emailSignIn()
+      }else{
+        upMsg.textContent=j.error||'失敗'; upMsg.style.color='red';
+      }
+    }catch{
+      upMsg.textContent='通信エラー'; upMsg.style.color='red';
+    }
   }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

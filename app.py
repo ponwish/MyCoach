@@ -503,7 +503,7 @@ def history_csv():
         app.logger.error(f"csv export: {e}")
         return jsonify({'error': 'csv'}), 500
     
-    # ---------- Email Sign‑Up ----------
+# --- サインアップ (メール) ---
 @app.route('/user/signup', methods=['POST'])
 def user_signup():
     data = request.json or {}
@@ -513,27 +513,46 @@ def user_signup():
     if not (email and password):
         return jsonify({'error': 'email & password required'}), 400
     try:
-        # 1) Supabase auth でユーザ作成
-        auth_res = supabase.auth.sign_up({'email': email, 'password': password})
-        auth_id  = auth_res.user.id  # uuid
+        # 1) Supabase Auth (admin) でユーザ作成
+        auth_res = supabase.auth.admin.create_user(
+            {"email": email, "password": password, "email_confirm": False}
+        )
+        auth_id = auth_res.user.id  # ← uuid
 
-        # 2) U_000001 形式の連番発番
-        last = supabase.table('app_users').select('id').order('created_at', desc=True).limit(1).execute().data
-        seq  = int(last[0]['id'].split('_')[1]) + 1 if last else 1
-        user_id = f"U_{seq:06d}"
-
-        # 3) プロファイル保存
-        supabase.table('app_users').insert({
-            'id': user_id,
+        # 2) app_users に INSERT（id は DB のシーケンスで自動採番）
+        resp = supabase.table('app_users').insert({
             'auth_id': auth_id,
             'name': name,
             'email': email
         }).execute()
+        user_id = resp.data[0]['id']
 
         return jsonify({'message': 'signed up', 'userId': user_id}), 200
+
     except Exception as e:
-        app.logger.error(f"signup error: {e}")
+        app.logger.error(f"[signup] {e}")
         return jsonify({'error': 'signup failed'}), 500
+
+
+# --- サインイン (メール) ---
+@app.route('/user/login', methods=['POST'])
+def user_login():
+    data = request.json or {}
+    email = data.get('email')
+    password = data.get('password')
+    if not (email and password):
+        return jsonify({'error': 'email & password required'}), 400
+    try:
+        auth_res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        auth_id  = auth_res.user.id
+
+        # app_users からアプリ独自 ID を取得
+        u = supabase.table('app_users').select('id').eq('auth_id', auth_id).single().execute()
+        return jsonify({'userId': u.data['id']}), 200
+
+    except Exception as e:
+        app.logger.error(f"[login] {e}")
+        return jsonify({'error': 'login failed'}), 401
 
 
 if __name__ == '__main__':
