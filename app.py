@@ -327,31 +327,44 @@ def coach_login():
 
     return jsonify({'id': coach['id'], 'name': coach['name']})
 
-fetch('/coach/register', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    name,
-    email,
-    password
-  })
-})
-.then(res => res.json())
-.then(data => {
-  if (data.success) {
-    alert('コーチ登録が完了しました！ログインしてください。');
-    // 必要であればログイン画面へリダイレクト
-    // location.href = '/coach/login.html';
-  } else {
-    alert('登録に失敗しました: ' + (data.error || '不明なエラー'));
-  }
-})
-.catch(err => {
-  console.error(err);
-  alert('通信エラーが発生しました。');
-});
+@app.route('/coach/register', methods=['POST'])
+def register_coach():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+
+        if not all([name, email, password]):
+            return jsonify({'error': '全ての項目を入力してください'}), 400
+
+        # すでに登録済みかチェック
+        existing = supabase.table('profiles').select('id').eq('email', email).execute()
+        if existing.data:
+            return jsonify({'error': 'このメールアドレスは既に登録されています'}), 400
+
+        # パスワードハッシュ化
+        hashed_pw = generate_password_hash(password)
+
+        # Supabase に登録
+        response = supabase.table('profiles').insert({
+            'id': str(uuid.uuid4()),
+            'name': name,
+            'email': email,
+            'password_hash': hashed_pw,
+            'code_id': f"C{uuid.uuid4().hex[:6].upper()}",  # 任意のコードID生成
+            'availability_status': True
+        }).execute()
+
+        if response.status_code == 201:
+            return jsonify({'success': True, 'message': '登録が完了しました！'}), 201
+        else:
+            return jsonify({'error': '登録に失敗しました'}), 500
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'サーバーエラー: ' + str(e)}), 500
 
 
     
