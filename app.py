@@ -203,11 +203,19 @@ def handle_talk():
     if not user_message:
         return jsonify({'message': 'メッセージが空です'}), 400
 
-    # ✅ 目標チェック
+    # ✅ 最新の目標を取得
     try:
-        goal_resp = supabase.table('user_goals').select('goal').eq('user_id', user_id).single().execute()
-        user_goal = goal_resp.data['goal']
-    except:
+        goal_resp = supabase.table('user_goals') \
+            .select('goal') \
+            .eq('user_id', user_id) \
+            .order('created_at', desc=True) \
+            .limit(1) \
+            .execute()
+        if not goal_resp.data:
+            return jsonify({'requireGoal': True}), 200
+        user_goal = goal_resp.data[0]['goal']
+    except Exception as e:
+        app.logger.error(f"Goal fetch error: {e}")
         return jsonify({'requireGoal': True}), 200
 
     # ✅ コーチチェック
@@ -265,6 +273,7 @@ def handle_talk():
         pass
 
     return jsonify({'message': ai_message}), 200
+
 
 @app.route('/user/history', methods=['GET', 'OPTIONS'])
 def get_chat_history():
