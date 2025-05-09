@@ -144,9 +144,74 @@
 <script>
   const API_BASE_URL = 'https://mycoach.onrender.com';
   const LOGIN_PAGE   = '/static/user_login.html';
+  const LIFF_ID      = '2007334673-1dVleAwO';            /* ← ご自身の LIFF ID に置換 */
 
-  let userId = localStorage.getItem('userId') || '';
-  if (!userId) location.replace(LOGIN_PAGE);
+  let userId   = localStorage.getItem('userId') || '';
+  let lineId   = localStorage.getItem('lineId') || '';
+  let polling  = null;
+
+  /* =========== 初期ログイン判定 =========== */
+  document.addEventListener('DOMContentLoaded', async () => {
+    try{
+      /* --- ① Supabase セッション確認 --- */
+      const { data:{session} } = await supabase.auth.getSession();
+      if(session?.user){
+        userId = session.user.id;
+        finalizeLogin();
+        return;
+      }
+
+      /* --- ② LINE LIFF チェック --- */
+      await liff.init({ liffId: LIFF_ID });
+      if(liff.isLoggedIn()){
+        const profile = await liff.getProfile();
+        lineId = profile.userId;
+        /* サーバへ登録 & userId 取得 */
+        const r = await fetch(`${API_BASE_URL}/user/liff_login`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ lineId })
+        });
+        const j = await r.json();
+        if(r.ok){
+          userId = j.userId;
+          localStorage.setItem('lineId', lineId);
+          localStorage.setItem('userId', userId);
+          finalizeLogin();
+          return;
+        }
+      }
+
+      /* --- ③ 未ログイン：ログイン選択へ遷移 --- */
+      location.replace(LOGIN_PAGE);
+
+    }catch(e){
+      console.error('初期化エラー',e);
+      alert('ログイン処理に失敗しました。再読み込みしてください。');
+    }
+  });
+
+  /* =========== ログイン完了後 UI 初期化 =========== */
+  function finalizeLogin(){
+    document.getElementById('mainHeader').style.display='flex';
+    showSection('home');
+    loadCurrentGoal();
+    loadCoachName();
+    loadHistory();
+  }
+
+  /* =========== メール → Supabase ログイン監視 =========== */
+  function startPollingSession(){
+    if(polling) return;
+    polling = setInterval(async ()=>{
+      const { data:{session} } = await supabase.auth.getSession();
+      if(session?.user){
+        clearInterval(polling);
+        userId = session.user.id;
+        finalizeLogin();
+      }
+    }, 1000);
+  }
+  startPollingSession();   /* ← ここで監視開始 */
 
   /* --- util: XSS 対策 --- */
   const escapeHtml = s => s.replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
