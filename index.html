@@ -99,6 +99,12 @@
   </style>
 </head>
 <body>
+  <div id="loginSelector" style="display: none; text-align: center; padding: 2rem;">
+    <h2 class="mb-4">ログイン方法を選んでください</h2>
+    <button onclick="loginWithLine()" class="btn btn-success m-2">LINEでログイン</button>
+    <button onclick="loginWithEmail()" class="btn btn-primary m-2">メールでログイン</button>
+    <button onclick="loginWithGoogle()" class="btn btn-danger m-2">Googleでログイン</button>
+  </div>
   <header>
     <h1>AIコーチング 2025</h1>
     <button id="hamburger">☰</button>
@@ -110,12 +116,6 @@
     <button class="btn btn-secondary w-100" onclick="navigate('history')">📜 チャット履歴を見る</button>
     <button class="btn btn-outline-secondary w-100 mb-3" onclick="navigate('goal-edit')">🎯 目標を変更</button>
   </div>  
-  <div id="loginSelector" style="display: none; text-align: center; padding: 2rem;">
-    <h2 class="mb-4">ログイン方法を選んでください</h2>
-    <button onclick="loginWithLine()" class="btn btn-success m-2">LINEでログイン</button>
-    <button onclick="loginWithEmail()" class="btn btn-primary m-2">メールでログイン</button>
-    <button onclick="loginWithGoogle()" class="btn btn-danger m-2">Googleでログイン</button>
-  </div>
   <div id="emailLoginArea" class="card" style="display: none;">
     <h4>メールでログイン</h4>
     <input type="email" id="emailInput" placeholder="メールアドレスを入力してください" />
