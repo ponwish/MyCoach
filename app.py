@@ -327,30 +327,32 @@ def coach_login():
 
     return jsonify({'id': coach['id'], 'name': coach['name']})
 
-@app.route('/coach/register', methods=['POST'])
-def register_coach():
-    try:
-        data = request.json
-        name = data.get('name')
-        email = data.get('email')
-        password = data.get('password')
+fetch('/coach/register', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name,
+    email,
+    password
+  })
+})
+.then(res => res.json())
+.then(data => {
+  if (data.success) {
+    alert('コーチ登録が完了しました！ログインしてください。');
+    // 必要であればログイン画面へリダイレクト
+    // location.href = '/coach/login.html';
+  } else {
+    alert('登録に失敗しました: ' + (data.error || '不明なエラー'));
+  }
+})
+.catch(err => {
+  console.error(err);
+  alert('通信エラーが発生しました。');
+});
 
-        if not all([name, email, password]):
-            return jsonify({'error': 'Missing fields'}), 400
-
-        hashed = generate_password_hash(password)
-
-        supabase.table('profiles').insert({
-            'name': name,
-            'email': email,
-            'password_hash': hashed
-        }).execute()
-
-        return jsonify({'success': True})
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
 
     
 if __name__ == '__main__':

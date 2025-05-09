@@ -188,15 +188,30 @@ async function registerCoach() {
     return;
   }
 
-  const res = await fetch('/coach/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password })
-  });
+  try {
+    const res = await fetch('/coach/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
 
-  const data = await res.json();
-  resultEl.textContent = data.message || data.error || '不明なエラーが発生しました';
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      resultEl.textContent = '✅ 登録が完了しました。ログインしてください。';
+      resultEl.style.color = 'green';
+    } else {
+      resultEl.textContent = data.error || '❌ 登録に失敗しました。';
+      resultEl.style.color = 'red';
+    }
+
+  } catch (err) {
+    console.error(err);
+    resultEl.textContent = '❌ 通信エラーが発生しました。';
+    resultEl.style.color = 'red';
+  }
 }
+
 
 
   function createProfile() {
