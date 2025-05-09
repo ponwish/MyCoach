@@ -605,8 +605,12 @@
 
       // 💬 ユーザーメッセージ表示
       const userMsgDiv = document.createElement('div');
-      userMsgDiv.className = 'message user-message';
-      userMsgDiv.innerHTML = `<div class="bubble">${message}</div>`;
+      userMsgDiv.className = 'chat-message user';
+      userMsgDiv.innerHTML = `
+        <div class="chat-bubble">
+          ${message}
+          <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>`;
       chat.appendChild(userMsgDiv);
       document.getElementById('talkInput').value = '';
 
@@ -655,8 +659,12 @@
 
         // 🤖 GPTメッセージを表示
         const aiMsgDiv = document.createElement('div');
-        aiMsgDiv.className = 'message ai-message';
-        aiMsgDiv.innerHTML = `<div class="bubble">${data.message}</div>`;
+        aiMsgDiv.className = 'chat-message assistant';
+        aiMsgDiv.innerHTML = `
+          <div class="chat-bubble">
+            ${data.message}
+            <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>`;
         chat.appendChild(aiMsgDiv);
         chat.scrollTop = chat.scrollHeight;
 
