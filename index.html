@@ -130,15 +130,15 @@
   margin-bottom: 14px;
 }
 
-.chat-message.assistant .chat-icon {
+.chat-icon {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  margin-right: 10px;
-  flex-shrink: 0;
-  border: 2px solid #4facfe; /* 青系の信頼感ある色で縁取り */
-  background-color: #fff;    /* 白背景にして浮きすぎないよう調整 */
+  border: 2px solid #4facfe;
+  background-color: #fff;
+  object-fit: cover;
 }
+
 
 .chat-message.user .chat-icon {
   display: none;
@@ -768,7 +768,7 @@ input:focus, select:focus {
         msgWrapper.className = `chat-message ${msg.role === 'user' ? 'user' : 'assistant'}`;
         if (msg.role === 'assistant') {
           msgWrapper.innerHTML = `
-            <img src="Resource/image/coach_icon.png" alt="Coach Icon" class="chat-icon" />
+            <img src="/Resource/image/coach_icon.png" alt="Coach Icon" class="chat-icon" />
             <div class="chat-bubble-container">
               <div class="chat-bubble">${msg.content}</div>
               <div class="chat-timestamp">${timeStr}</div>
