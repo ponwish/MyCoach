@@ -630,30 +630,46 @@ def liff_login():
 # ---------------- LINE LIFF: email link ----------------
 @app.route('/user/liff_link', methods=['POST'])
 def liff_link():
+    """
+    LINE ID とメールを受け取り、app_users を 1 行に集約する。
+    既存行があれば UPDATE、無ければ INSERT。
+    """
     data = request.json or {}
     line_id = data.get('lineId')
     email   = (data.get('email') or '').strip().lower()
+
     if not line_id or not email:
-        return jsonify({'error':'lineId & email required'}), 400
+        return jsonify({'error': 'lineId & email required'}), 400
+
     try:
-        # email が既に登録済み
-        try:
-            existing = supabase_admin.table('app_users').select('id').eq('email', email).single().execute()
-            user_id  = existing.data['id']
-            supabase_admin.table('app_users').update({'line_id': line_id}).eq('id', user_id).execute()
-        except Exception:
-            # line_id が登録済み
-            try:
-                row = supabase_admin.table('app_users').select('id').eq('line_id', line_id).single().execute()
-                user_id = row.data['id']
-                supabase_admin.table('app_users').update({'email': email}).eq('id', user_id).execute()
-            except Exception:
-                ins = supabase_admin.table('app_users').insert({'line_id': line_id,'email': email}).execute()
-                user_id = ins.data[0]['id']
+        # ① email または line_id が一致する行を検索
+        q = (supabase_admin
+             .table('app_users')
+             .select('id')
+             .or_(f'email.eq.{email},line_id.eq.{line_id}')
+             .limit(1)
+             .execute())
+
+        if q.data:
+            # ② 既存レコードを上書き
+            user_id = q.data[0]['id']
+            supabase_admin.table('app_users').update({
+                'email':   email,
+                'line_id': line_id
+            }).eq('id', user_id).execute()
+        else:
+            # ③ 新規 INSERT
+            ins = supabase_admin.table('app_users').insert({
+                'email':   email,
+                'line_id': line_id
+            }).execute()
+            user_id = ins.data[0]['id']
+
         return jsonify({'userId': user_id}), 200
+
     except Exception as e:
         app.logger.error(f"[liff_link] {e}")
-        return jsonify({'error':'liff link failed'}), 500
+        return jsonify({'error': 'liff link failed'}), 500
 
 if __name__ == '__main__':
     # ログにタイムスタンプを出すとデバッグしやすい
