@@ -341,17 +341,24 @@
 
     async function showSection(section) {
       hideAll();
+
+      // ✅ ログイン済みの場合のみヘッダ表示
+      if (userId) {
+        document.getElementById('mainHeader').style.display = 'flex';
+      } else {
+        document.getElementById('mainHeader').style.display = 'none';
+      }
+
       if (section === 'home') document.getElementById('home-area').style.display = 'block';
       if (section === 'goal') document.getElementById('goal-area').style.display = 'block';
       if (section === 'goal-edit') await loadGoalEdit();
-      if (section === 'chat') await checkPrerequisites();  // ✅ 非同期処理に await
+      if (section === 'chat') await checkPrerequisites();
       if (section === 'coach') await loadCoachChange();
       if (section === 'history') await loadHistory();
     }
-
     document.getElementById('logo').addEventListener('click', () => {
-  showSection('home');
-});
+      showSection('home');
+    });
 
     function submitGoal() {
       const goal = document.getElementById('goalInput').value.trim();
