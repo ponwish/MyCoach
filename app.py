@@ -521,16 +521,15 @@ def user_signup():
         return jsonify({'error': 'email & password required'}), 400
 
     try:
-        # 1) Public クライアントで sign_up
-        res = supabase_public.auth.sign_up({"email": email, "password": password})
-        auth_id = res.user.id
-
-        # 2) メール確認を即時済みに変更
-        supabase_admin.auth.admin.update_user_by_id(auth_id, {
-            "email_confirmed_at": datetime.now(timezone.utc).isoformat()
+        # 1) Service‑Role で “確認済み” ユーザを作成
+        res = supabase_admin.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True       # ← ここがポイント
         })
+        auth_id = res.user.id  # uuid
 
-        # 3) app_users に INSERT（id はシーケンスで自動採番）
+        # 2) app_users に INSERT（id はシーケンス自動採番）
         inserted = supabase_admin.table('app_users').insert({
             'auth_id': auth_id,
             'name': name,
