@@ -360,17 +360,25 @@
 
     async function checkPrerequisites() {
       if (!userId) {
-        try { const p = await liff.getProfile(); userId = p.userId; } catch {}
+        try {
+          const p = await liff.getProfile();
+          userId = p.userId;
+        } catch {
+          alert("ユーザー情報の取得に失敗しました");
+          return showSection('goal');
+        }
       }
 
-      let hasGoal = true;
       let goal = '';
       try {
-        const goalRes = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`).then(r => r.json());
-        goal = goalRes.goal;
+        const res = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        goal = data?.goal?.trim() ?? '';
         document.getElementById('userGoalText').textContent = goal || '未設定';
       } catch {
-        hasGoal = false;
+        alert('チャットを利用するには、まず目標の設定が必要です。');
+        return showSection('goal');
       }
 
       if (!goal) {
@@ -395,7 +403,6 @@
         return showSection('coach');
       }
 
-      // 目標・コーチが揃っていればチャット表示
       document.getElementById('chat-area').style.display = 'block';
       const suggestions = document.getElementById('suggestions');
       if (!suggestionsShown) {
@@ -406,6 +413,7 @@
         suggestions.style.display = 'none';
       }
     }
+
 
     function renderSuggestions() {
       const container = document.getElementById('suggestions'); container.innerHTML = ''; 
