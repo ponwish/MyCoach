@@ -572,6 +572,41 @@ def user_login():
     except Exception as e:
         app.logger.warning(f"[login failed] {e}")
         return jsonify({'error': 'unauthorized'}), 401
+    
+    # ===================== OAuth ログイン / メール紐づけ =====================
+@app.route('/user/oauth_login', methods=['POST'])
+def oauth_login():
+    """
+    フロントで Supabase OAuth 認証が完了したあと、
+    auth_id (uuid) と email を受け取り、app_users と紐づけて userId を返す。
+    """
+    data   = request.json or {}
+    auth_id = data.get('authId')
+    email   = (data.get('email') or '').strip().lower()
+
+    if not auth_id or not email:
+        return jsonify({'error': 'authId & email required'}), 400
+    try:
+        # ① app_users に email が既に存在するかチェック
+        q = supabase_admin.table('app_users').select('id').eq('email', email).single()
+        try:
+            existing = q.execute()
+            user_id  = existing.data['id']
+            # auth_id を更新
+            supabase_admin.table('app_users').update({'auth_id': auth_id}).eq('id', user_id).execute()
+        except Exception:
+            # ② ない場合は新規 INSERT（id はシーケンス自動採番）
+            ins = supabase_admin.table('app_users').insert({
+                'auth_id': auth_id,
+                'email':   email
+            }).execute()
+            user_id = ins.data[0]['id']
+
+        return jsonify({'userId': user_id}), 200
+
+    except Exception as e:
+        app.logger.error(f"[oauth_login] {e}")
+        return jsonify({'error': 'oauth login failed'}), 500
 
 if __name__ == '__main__':
     # ログにタイムスタンプを出すとデバッグしやすい
