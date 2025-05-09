@@ -338,9 +338,9 @@ def register_coach():
         if not all([name, email, password]):
             return jsonify({'error': 'Missing fields'}), 400
 
-        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        hashed = generate_password_hash(password)
 
-        supabase.table('coach_profiles').insert({
+        supabase.table('profiles').insert({
             'name': name,
             'email': email,
             'password_hash': hashed
