@@ -6,7 +6,7 @@ from postgrest.exceptions import APIError
 import os
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-import uuid
+import uuid, logging
 
 app = Flask(__name__)
 app.config.update(
@@ -512,20 +512,25 @@ def user_signup():
     name = data.get('name') or ''
     if not (email and password):
         return jsonify({'error': 'email & password required'}), 400
-    try:
-        # 1) Supabase Auth (admin) でユーザ作成
-        auth_res = supabase.auth.admin.create_user(
-            {"email": email, "password": password, "email_confirm": False}
-        )
-        auth_id = auth_res.user.id  # ← uuid
 
-        # 2) app_users に INSERT（id は DB のシーケンスで自動採番）
-        resp = supabase.table('app_users').insert({
+    try:
+        # 1) Supabase Auth Admin でユーザ作成（メール確認済みとして登録）
+        auth_res = supabase.auth.admin.create_user(
+            {
+                "email": email,
+                "password": password,
+                "email_confirm": True          # ← ここを True に変更
+            }
+        )
+        auth_id = auth_res.user.id  # uuid
+
+        # 2) app_users へ INSERT（id はシーケンスで自動採番）
+        inserted = supabase.table('app_users').insert({
             'auth_id': auth_id,
             'name': name,
             'email': email
         }).execute()
-        user_id = resp.data[0]['id']
+        user_id = inserted.data[0]['id']
 
         return jsonify({'message': 'signed up', 'userId': user_id}), 200
 
@@ -542,19 +547,38 @@ def user_login():
     password = data.get('password')
     if not (email and password):
         return jsonify({'error': 'email & password required'}), 400
+
     try:
-        auth_res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        # 1) Supabase Auth で認証
+        auth_res = supabase.auth.sign_in_with_password(
+            {"email": email, "password": password}
+        )
         auth_id  = auth_res.user.id
 
-        # app_users からアプリ独自 ID を取得
-        u = supabase.table('app_users').select('id').eq('auth_id', auth_id).single().execute()
-        return jsonify({'userId': u.data['id']}), 200
+        # 2) アプリ独自 ID を取得（存在しなければ作成）
+        try:
+            u = (supabase
+                 .table('app_users')
+                 .select('id')
+                 .eq('auth_id', auth_id)
+                 .single()
+                 .execute())
+            user_id = u.data['id']
+        except Exception:
+            # app_users に無い場合は自動挿入
+            inserted = supabase.table('app_users').insert({
+                'auth_id': auth_id,
+                'email': email
+            }).execute()
+            user_id = inserted.data[0]['id']
+
+        return jsonify({'userId': user_id}), 200
 
     except Exception as e:
-        app.logger.error(f"[login] {e}")
-        return jsonify({'error': 'login failed'}), 401
-
+        app.logger.warning(f"[login failed] {e}")
+        return jsonify({'error': 'unauthorized'}), 401
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    # ログにタイムスタンプを出すとデバッグしやすい
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+    app.run(host='0.0.0.0', port=4000, debug=False)
