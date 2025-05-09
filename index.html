@@ -360,7 +360,7 @@
 
     async function checkPrerequisites() {
       console.log('🔍 checkPrerequisites 開始');
-
+      hideAll(); // ← 先に全非表示化してから制御スタート
       if (!userId) {
         try {
           const profile = await liff.getProfile();
@@ -423,11 +423,6 @@
       document.getElementById('chat-area').style.display = 'block';
 
       const suggestions = document.getElementById('suggestions');
-      const chatArea = document.getElementById('chat-area');
-      if (chatArea.style.display !== 'block') {
-        console.warn('⚠️ chat-areaが非表示のままです。強制表示します。');
-        chatArea.style.display = 'block';
-      }
       if (!suggestionsShown) {
         renderSuggestions();
         suggestions.style.display = 'flex';
