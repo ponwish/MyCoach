@@ -374,6 +374,7 @@
         const res = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
+        console.log('🎯 goal API response:', data); // ← 🔍 ログで実態確認
         goal = data?.goal?.trim() ?? '';
         document.getElementById('userGoalText').textContent = goal || '未設定';
       } catch {
