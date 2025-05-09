@@ -10,9 +10,11 @@
     .card{max-width:420px;margin:auto;top:50%;transform:translateY(20%);box-shadow:0 4px 10px rgba(0,0,0,.07)}
     .oauth-btn img{height:20px;margin-right:6px}
   </style>
-  <!-- ✅ Supabase の URL をフロントで参照できるよう定義 -->
+
+  <!-- ✅ 環境変数的にまとめておくと便利 -->
   <script>
-    const SUPABASE_URL = "https://kyxneqqadoyqxsmohbop.supabase.co"; /* ここをプロジェクト URL に置換 */
+    const SUPABASE_URL   = "https://kyxneqqadoyqxsmohbop.supabase.co";
+    const FRONTEND_ORIGIN = "https://imaginative-meerkat-5675d3.netlify.app"; /* ← あなたの Netlify URL */
   </script>
 </head>
 <body>
@@ -52,12 +54,14 @@
 <script>
   const API = 'https://mycoach.onrender.com';
 
+  /* -------- OAuth -------- */
   function oauthSignIn(provider){
-    const redirect = encodeURIComponent(location.origin + '/index.html');
+    const redirect = encodeURIComponent(FRONTEND_ORIGIN + '/index.html');
     location.href =
       `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirect}`;
   }
 
+  /* -------- メールサインイン -------- */
   async function emailSignIn(){
     const email = inEmail.value.trim(), pass = inPass.value;
     inMsg.textContent='...';
@@ -70,7 +74,7 @@
       const j = await r.json();
       if(r.ok){
         localStorage.setItem('userId',j.userId);
-        location.href='/index.html';           /* ← ここを修正 */
+        location.href = FRONTEND_ORIGIN + '/index.html';   /* ← ここを固定 URL に */
       }else{
         inMsg.textContent=j.error||'失敗'; inMsg.style.color='red';
       }
@@ -79,6 +83,7 @@
     }
   }
 
+  /* -------- メールサインアップ -------- */
   async function emailSignUp(){
     const name= upName.value.trim(), email=upEmail.value.trim(), pass=upPass.value;
     upMsg.textContent='...';
