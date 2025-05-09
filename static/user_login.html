@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ユーザ サインイン / サインアップ</title>
+  <title>ユーザ ログイン / サインアップ</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <style>
     body{background:#f8fafc;font-family:'Segoe UI',sans-serif}
@@ -11,10 +11,10 @@
     .oauth-btn img{height:20px;margin-right:6px}
   </style>
 
-  <!-- ✅ 環境変数的にまとめておくと便利 -->
+  <!-- 環境定数 -->
   <script>
-    const SUPABASE_URL   = "https://kyxneqqadoyqxsmohbop.supabase.co";
-    const FRONTEND_ORIGIN = "https://imaginative-meerkat-5675d3.netlify.app"; /* ← あなたの Netlify URL */
+    const SUPABASE_URL   = "https://kyxneqqadoyqxsmohbop.supabase.co";        /* ← 変更不要 */
+    const FRONTEND_HOME  = "/index.html";                                      /* redirect 先 */
   </script>
 </head>
 <body>
@@ -22,15 +22,16 @@
     <ul class="nav nav-tabs mb-3">
       <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#signinTab">サインイン</button></li>
       <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#signupTab">サインアップ</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#oauthLinkTab">メール連携 (Google/LINE)</button></li>
     </ul>
 
     <div class="tab-content">
       <!-- サインイン -->
       <div class="tab-pane fade show active" id="signinTab">
-        <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="oauthSignIn('google')">
+        <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="directOAuth('google')">
           <img src="https://www.svgrepo.com/show/475656/google-color.svg">Google でサインイン
         </button>
-        <button class="btn btn-outline-success w-100 mb-3 oauth-btn" onclick="oauthSignIn('line')">
+        <button class="btn btn-outline-success w-100 mb-3 oauth-btn" onclick="directOAuth('line')">
           <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE でサインイン
         </button>
 
@@ -48,61 +49,98 @@
         <button class="btn btn-success w-100" onclick="emailSignUp()">メールでサインアップ</button>
         <div id="upMsg" class="small mt-2"></div>
       </div>
+
+      <!-- OAuth メール連携 -->
+      <div class="tab-pane fade" id="oauthLinkTab">
+        <p class="small text-muted">既に Google / LINE アカウントをお持ちの場合に、メールアドレスと紐づけて登録します。</p>
+        <div class="mb-3"><input id="linkEmail" class="form-control" placeholder="メールアドレス"></div>
+        <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="linkOAuth('google')">
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg">Google と連携
+        </button>
+        <button class="btn btn-outline-success w-100 oauth-btn" onclick="linkOAuth('line')">
+          <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE と連携
+        </button>
+        <div id="linkMsg" class="small mt-2"></div>
+      </div>
     </div>
   </div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  const sb = createClient(SUPABASE_URL, "PUBLIC_ANON_KEY");       /* ← anon キーを設定 */
+  window.supabase = sb;
+
+  /* --- OAuth コールバック監視 --- */
+  const { data: { subscription } } = sb.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      const authId = session.user.id;
+      const email  = localStorage.getItem('pendingEmail') || session.user.email;
+      try {
+        const r = await fetch('https://mycoach.onrender.com/user/oauth_login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({authId,email})
+        });
+        const j = await r.json();
+        if(r.ok){
+          localStorage.setItem('userId', j.userId);
+          localStorage.removeItem('pendingEmail');
+          location.href = FRONTEND_HOME;
+        }else{
+          document.getElementById('linkMsg').textContent = j.error || '連携失敗';
+          sb.auth.signOut();
+        }
+      }catch(e){
+        document.getElementById('linkMsg').textContent = '通信エラー';
+        sb.auth.signOut();
+      }
+    }
+  });
+</script>
 
 <script>
   const API = 'https://mycoach.onrender.com';
 
-  /* -------- OAuth -------- */
-  function oauthSignIn(provider){
-    const redirect = encodeURIComponent(FRONTEND_ORIGIN + '/index.html');
-    location.href =
-      `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirect}`;
+  function directOAuth(provider){
+    const redirect = encodeURIComponent(location.origin + FRONTEND_HOME);
+    location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirect}`;
   }
 
-  /* -------- メールサインイン -------- */
+  /* ----- メールパスワード ----- */
   async function emailSignIn(){
     const email = inEmail.value.trim(), pass = inPass.value;
     inMsg.textContent='...';
     try{
       const r = await fetch(`${API}/user/login`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({email,password:pass})
       });
       const j = await r.json();
-      if(r.ok){
-        localStorage.setItem('userId',j.userId);
-        location.href = FRONTEND_ORIGIN + '/index.html';   /* ← ここを固定 URL に */
-      }else{
-        inMsg.textContent=j.error||'失敗'; inMsg.style.color='red';
-      }
-    }catch{
-      inMsg.textContent='通信エラー'; inMsg.style.color='red';
-    }
+      if(r.ok){ localStorage.setItem('userId',j.userId); location.href=FRONTEND_HOME; }
+      else    { inMsg.textContent=j.error||'失敗'; inMsg.style.color='red'; }
+    }catch{ inMsg.textContent='通信エラー'; inMsg.style.color='red'; }
   }
 
-  /* -------- メールサインアップ -------- */
   async function emailSignUp(){
     const name= upName.value.trim(), email=upEmail.value.trim(), pass=upPass.value;
     upMsg.textContent='...';
     try{
       const r = await fetch(`${API}/user/signup`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({name,email,password:pass})
       });
       const j=await r.json();
-      if(r.ok){
-        upMsg.textContent='登録完了！ログインしてください';
-        upMsg.style.color='green';
-      }else{
-        upMsg.textContent=j.error||'失敗'; upMsg.style.color='red';
-      }
-    }catch{
-      upMsg.textContent='通信エラー'; upMsg.style.color='red';
-    }
+      if(r.ok){ upMsg.textContent='登録完了！ログインしてください'; upMsg.style.color='green'; }
+      else    { upMsg.textContent=j.error||'失敗'; upMsg.style.color='red'; }
+    }catch{ upMsg.textContent='通信エラー'; upMsg.style.color='red'; }
+  }
+
+  /* ----- OAuth + メール連携 ----- */
+  function linkOAuth(provider){
+    const email = linkEmail.value.trim();
+    if(!email) return alert('メールアドレスを入力してください');
+    localStorage.setItem('pendingEmail', email);
+    const redirect = encodeURIComponent(location.origin + FRONTEND_HOME);
+    location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirect}`;
   }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
