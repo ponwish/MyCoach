@@ -423,6 +423,11 @@
       document.getElementById('chat-area').style.display = 'block';
 
       const suggestions = document.getElementById('suggestions');
+      const chatArea = document.getElementById('chat-area');
+      if (chatArea.style.display !== 'block') {
+        console.warn('⚠️ chat-areaが非表示のままです。強制表示します。');
+        chatArea.style.display = 'block';
+      }
       if (!suggestionsShown) {
         renderSuggestions();
         suggestions.style.display = 'flex';
