@@ -383,6 +383,11 @@
         goal = (data?.goal || '').replace(/^[\s\u3000]+|[\s\u3000]+$/g, ''); // 半角/全角スペースtrim
 
         console.log('🎯 goal:', goal);
+        console.log('📦 goal raw:', data.goal);
+        console.log('📦 goal typeof:', typeof data.goal);
+        console.log('📦 goal after clean:', goal);
+        console.log('📦 goal length:', goal.length);
+
         document.getElementById('userGoalText').textContent = goal || '未設定';
       } catch (err) {
         alert('チャットを利用するには、まず目標の設定が必要です。');
