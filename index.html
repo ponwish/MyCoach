@@ -371,39 +371,41 @@
 
       let goal = '';
       try {
-        const res = await fetch(`${API_BASE_URL}/user/goal?userId=${userId}`);
-        if (!res.ok) throw new Error();
+        const res = await fetch(`${API_BASE_URL}/user/goal?userId=${encodeURIComponent(userId)}`);
+        if (!res.ok) throw new Error('目標取得失敗');
         const data = await res.json();
-        console.log('🎯 goal API response:', data); // ← 🔍 ログで実態確認
-        goal = data?.goal?.trim() ?? '';
-        document.getElementById('userGoalText').textContent = goal || '未設定';
-      } catch {
+        console.log('🎯 goal API response:', data);
+
+        if (!data || typeof data.goal !== 'string' || data.goal.trim() === '') {
+          throw new Error('目標未設定');
+        }
+
+        goal = data.goal.trim();
+        document.getElementById('userGoalText').textContent = goal;
+      } catch (err) {
         alert('チャットを利用するには、まず目標の設定が必要です。');
         return showSection('goal');
       }
 
-      if (!goal) {
-        alert('チャットを利用するには、まず目標の設定が必要です。');
-        return showSection('goal');
-      }
-
-      let hasCoach = true;
+      let hasCoach = false;
       try {
-        const mapping = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`).then(r => r.json());
+        const mappingRes = await fetch(`${API_BASE_URL}/user/coach?userId=${encodeURIComponent(userId)}`);
+        if (!mappingRes.ok) throw new Error('マッピング取得失敗');
+        const mapping = await mappingRes.json();
+
+        if (!mapping.coachId) throw new Error('未マッピング');
+
         const coachList = await fetch(`${API_BASE_URL}/coaches`).then(r => r.json());
         const coach = coachList.find(c => c.id === mapping.coachId);
         document.getElementById('coachNameText').textContent = coach?.name || '未設定';
-        if (!mapping.coachId) hasCoach = false;
+        hasCoach = true;
       } catch (err) {
         console.error("🛑 コーチ取得エラー:", err);
-        hasCoach = false;
-      }
-
-      if (!hasCoach) {
         alert('チャットを利用するには、担当コーチの選択が必要です。');
         return showSection('coach');
       }
 
+      // 目標・コーチが揃っていればチャット表示
       document.getElementById('chat-area').style.display = 'block';
       const suggestions = document.getElementById('suggestions');
       if (!suggestionsShown) {
@@ -414,7 +416,6 @@
         suggestions.style.display = 'none';
       }
     }
-
 
     function renderSuggestions() {
       const container = document.getElementById('suggestions'); container.innerHTML = ''; 
