@@ -444,10 +444,12 @@
 
     function sendTalk() {
       if (!userId) return alert('ユーザー情報が取得できていません');
-      document.getElementById('suggestions').style.display = 'none';
 
-      const message = document.getElementById('talkInput').value;
+      const message = document.getElementById('talkInput').value.trim();
       if (!message) return;
+
+      // ✅ サジェスチョン非表示
+      document.getElementById('suggestions').style.display = 'none';
 
       const chat = document.getElementById('chat');
 
@@ -466,6 +468,8 @@
       chat.appendChild(loadingDiv);
       chat.scrollTop = chat.scrollHeight;
 
+      console.log('📤 メッセージ送信:', message);
+
       fetch(`${API_BASE_URL}/talk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -473,20 +477,47 @@
       })
       .then(res => res.json())
       .then(data => {
-        if (data.requireGoal) return showSection('goal');
-        if (data.requireCoach) return showSection('coach');
+        console.log('📩 サーバーからの応答:', data);
 
-        // 🔁 typingを削除してから実際の返答を追加
+        // 🚧 チェック条件
+        if (data.requireGoal) {
+          alert('目標設定が必要です。');
+          return showSection('goal');
+        }
+        if (data.requireCoach) {
+          alert('コーチ選択が必要です。');
+          return showSection('coach');
+        }
+
+        // ⛔️ typingを削除
         const typingEl = document.getElementById('typing-indicator');
         if (typingEl) typingEl.remove();
 
+        // ✅ GPTの返答が存在するかチェック
+        if (!data.message || typeof data.message !== 'string') {
+          console.warn('⚠️ GPTからの応答が無効です:', data.message);
+          const errorMsg = document.createElement('div');
+          errorMsg.className = 'message ai-message';
+          errorMsg.innerHTML = `<div class="bubble">⚠️ 応答の取得に失敗しました</div>`;
+          chat.appendChild(errorMsg);
+          return;
+        }
+
+        // 🤖 GPTメッセージを表示
         const aiMsgDiv = document.createElement('div');
         aiMsgDiv.className = 'message ai-message';
         aiMsgDiv.innerHTML = `<div class="bubble">${data.message}</div>`;
         chat.appendChild(aiMsgDiv);
         chat.scrollTop = chat.scrollHeight;
+
+        console.log('✅ チャット画面に応答を追加しました:', data.message);
+      })
+      .catch(error => {
+        console.error('🛑 fetchエラー:', error);
+        alert('サーバーとの通信に失敗しました');
       });
     }
+
 
     async function loadCoachChange() {
       hideAll();
