@@ -70,7 +70,7 @@
       const j = await r.json();
       if(r.ok){
         localStorage.setItem('userId',j.userId);
-        location.href='index.html';
+        location.href='/index.html';           /* ← ここを修正 */
       }else{
         inMsg.textContent=j.error||'失敗'; inMsg.style.color='red';
       }
@@ -92,7 +92,6 @@
       if(r.ok){
         upMsg.textContent='登録完了！ログインしてください';
         upMsg.style.color='green';
-        // 自動でサインインしても良い場合はここで emailSignIn()
       }else{
         upMsg.textContent=j.error||'失敗'; upMsg.style.color='red';
       }
