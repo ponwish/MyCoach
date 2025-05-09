@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ユーザ サインイン / サインアップ</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <style>
+    body{background:#f8fafc;font-family:'Segoe UI',sans-serif}
+    .card{max-width:420px;margin:auto;top:50%;transform:translateY(20%);box-shadow:0 4px 10px rgba(0,0,0,.07)}
+    .oauth-btn img{height:20px;margin-right:6px}
+  </style>
+</head>
+<body>
+  <div class="card p-4">
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#signinTab">サインイン</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#signupTab">サインアップ</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- サインイン -->
+      <div class="tab-pane fade show active" id="signinTab">
+        <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="oauthSignIn('google')">
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg">Google でサインイン
+        </button>
+        <button class="btn btn-outline-success w-100 mb-3 oauth-btn" onclick="oauthSignIn('line')">
+          <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE でサインイン
+        </button>
+
+        <div class="mb-3"><input id="inEmail"  class="form-control" placeholder="メールアドレス"></div>
+        <div class="mb-3"><input id="inPass"   type="password" class="form-control" placeholder="パスワード"></div>
+        <button class="btn btn-primary w-100" onclick="emailSignIn()">メールでサインイン</button>
+        <div id="inMsg" class="small mt-2"></div>
+      </div>
+
+      <!-- サインアップ -->
+      <div class="tab-pane fade" id="signupTab">
+        <div class="mb-3"><input id="upName"  class="form-control" placeholder="お名前 (任意)"></div>
+        <div class="mb-3"><input id="upEmail" class="form-control" placeholder="メールアドレス"></div>
+        <div class="mb-3"><input id="upPass"  type="password" class="form-control" placeholder="パスワード (6文字以上)"></div>
+        <button class="btn btn-success w-100" onclick="emailSignUp()">メールでサインアップ</button>
+        <div id="upMsg" class="small mt-2"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API = 'https://mycoach.onrender.com';
+
+  function oauthSignIn(provider){
+    // Supabase の OAuth リダイレクト URL を生成
+    const redirect = encodeURIComponent(location.origin + '/index.html');
+    location.href = `https://${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirect}`;
+  }
+
+  async function emailSignIn(){
+    const email = inEmail.value.trim(), pass = inPass.value;
+    inMsg.textContent='...';
+    try{
+      const r = await fetch(`${API}/user/login`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password:pass})
+      });
+      const j = await r.json();
+      if(r.ok){ localStorage.setItem('userId',j.userId); location.href='index.html'; }
+      else    { inMsg.textContent=j.error||'失敗'; inMsg.style.color='red'; }
+    }catch{ inMsg.textContent='通信エラー'; inMsg.style.color='red'; }
+  }
+
+  async function emailSignUp(){
+    const name= upName.value.trim(), email=upEmail.value.trim(), pass=upPass.value;
+    upMsg.textContent='...';
+    try{
+      const r = await fetch(`${API}/user/signup`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name,email,password:pass})
+      });
+      const j=await r.json();
+      if(r.ok){ upMsg.textContent='登録完了！ログインしてください'; upMsg.style.color='green'; }
+      else    { upMsg.textContent=j.error||'失敗'; upMsg.style.color='red'; }
+    }catch{ upMsg.textContent='通信エラー'; upMsg.style.color='red'; }
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

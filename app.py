@@ -502,6 +502,39 @@ def history_csv():
     except Exception as e:
         app.logger.error(f"csv export: {e}")
         return jsonify({'error': 'csv'}), 500
+    
+    # ---------- Email Sign‑Up ----------
+@app.route('/user/signup', methods=['POST'])
+def user_signup():
+    data = request.json or {}
+    email = data.get('email')
+    password = data.get('password')
+    name = data.get('name') or ''
+    if not (email and password):
+        return jsonify({'error': 'email & password required'}), 400
+    try:
+        # 1) Supabase auth でユーザ作成
+        auth_res = supabase.auth.sign_up({'email': email, 'password': password})
+        auth_id  = auth_res.user.id  # uuid
+
+        # 2) U_000001 形式の連番発番
+        last = supabase.table('app_users').select('id').order('created_at', desc=True).limit(1).execute().data
+        seq  = int(last[0]['id'].split('_')[1]) + 1 if last else 1
+        user_id = f"U_{seq:06d}"
+
+        # 3) プロファイル保存
+        supabase.table('app_users').insert({
+            'id': user_id,
+            'auth_id': auth_id,
+            'name': name,
+            'email': email
+        }).execute()
+
+        return jsonify({'message': 'signed up', 'userId': user_id}), 200
+    except Exception as e:
+        app.logger.error(f"signup error: {e}")
+        return jsonify({'error': 'signup failed'}), 500
+
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
