@@ -609,9 +609,9 @@
       userMsgDiv.innerHTML = `
         <div class="chat-bubble">
           ${message}
-          <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
         </div>`;
-      chat.appendChild(userMsgDiv);
+        <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
+        chat.appendChild(userMsgDiv);
       document.getElementById('talkInput').value = '';
 
       // 🔄 GPTのローディングバブル追加
@@ -663,9 +663,9 @@
         aiMsgDiv.innerHTML = `
           <div class="chat-bubble">
             ${data.message}
-            <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
           </div>`;
-        chat.appendChild(aiMsgDiv);
+          <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
+          chat.appendChild(aiMsgDiv);
         chat.scrollTop = chat.scrollHeight;
 
         console.log('✅ チャット画面に応答を追加しました:', data.message);
@@ -734,9 +734,9 @@
         msgWrapper.innerHTML = `
           <div class="chat-bubble">
             ${msg.content}
-            <div class="chat-timestamp">${timeStr}</div>
           </div>
-        `;
+            <div class="chat-timestamp">${timeStr}</div>
+          `;
         container.appendChild(msgWrapper);
       });
 
