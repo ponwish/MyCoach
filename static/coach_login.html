@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>コーチログイン</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #e0f7fa, #e8f4fd);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-card {
+      background: #fff;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .form-control:focus {
+      border-color: #4facfe;
+      box-shadow: 0 0 4px rgba(79,172,254,0.5);
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+  <h4 class="mb-4 text-center">コーチログイン</h4>
+  <div class="mb-3">
+    <label for="email" class="form-label">メールアドレス</label>
+    <input type="email" class="form-control" id="email" placeholder="example@example.com">
+  </div>
+  <div class="mb-3">
+    <label for="password" class="form-label">パスワード</label>
+    <input type="password" class="form-control" id="password" placeholder="パスワード">
+  </div>
+  <div id="loginMessage" class="text-danger small mb-3"></div>
+  <button class="btn btn-primary w-100" onclick="loginCoach()">ログイン</button>
+</div>
+
+<script>
+  const API_BASE_URL = 'https://mycoach.onrender.com';
+
+  async function loginCoach() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const messageEl = document.getElementById('loginMessage');
+
+    if (!email || !password) {
+      messageEl.textContent = 'メールアドレスとパスワードを入力してください。';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/coach/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        messageEl.textContent = errorData.error || 'ログインに失敗しました。';
+        return;
+      }
+
+      const data = await res.json();
+      localStorage.setItem('coachId', data.id);
+      localStorage.setItem('coachName', data.name);
+      window.location.href = 'coach_dashboard.html';
+    } catch (err) {
+      console.error('ログインエラー:', err);
+      messageEl.textContent = '通信エラーが発生しました。';
+    }
+  }
+</script>
+
+</body>
+</html>

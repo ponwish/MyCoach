@@ -44,6 +44,17 @@
     <div id="profile-list"></div>
   </div>
 
+<!-- 🔐 新規コーチ登録エリア -->
+<div class="card mt-4" id="coach-signup-area">
+  <h5 class="mb-3">新規コーチ登録</h5>
+  <input type="text" id="coachName" placeholder="名前" class="form-control mb-2" />
+  <input type="email" id="coachEmail" placeholder="メールアドレス" class="form-control mb-2" />
+  <input type="password" id="coachPassword" placeholder="パスワード" class="form-control mb-2" />
+  <button class="btn btn-success w-100" onclick="registerCoach()">登録する</button>
+  <div id="signupResult" class="small mt-2 text-muted"></div>
+</div>
+
+
   <!-- 新規コーチ追加フォーム -->
   <div class="card">
     <h4 class="text-center">新規コーチ追加</h4>
@@ -165,6 +176,28 @@ function showEditForm(id) {
         });
     });
 }
+
+async function registerCoach() {
+  const name = document.getElementById('coachName').value.trim();
+  const email = document.getElementById('coachEmail').value.trim();
+  const password = document.getElementById('coachPassword').value;
+  const resultEl = document.getElementById('signupResult');
+
+  if (!name || !email || !password) {
+    resultEl.textContent = '全ての項目を入力してください。';
+    return;
+  }
+
+  const res = await fetch('/coach/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password })
+  });
+
+  const data = await res.json();
+  resultEl.textContent = data.message || data.error || '不明なエラーが発生しました';
+}
+
 
   function createProfile() {
     const payload = {

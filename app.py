@@ -5,6 +5,8 @@ from supabase import create_client
 from postgrest.exceptions import APIError
 import os
 from datetime import datetime
+from werkzeug.security import check_password_hash
+import uuid
 
 app = Flask(__name__)
 app.config.update(
@@ -299,6 +301,63 @@ def get_chat_history():
         app.logger.error(f"履歴取得中のエラー: {str(e)}")
         return jsonify({'error': '履歴取得に失敗しました', 'details': str(e)}), 500
 
+@app.route('/coach/login', methods=['POST'])
+def coach_login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'error': 'メールアドレスとパスワードは必須です。'}), 400
+
+    # Supabase から該当するコーチを取得
+    result = supabase.table('profiles') \
+        .select('id, name, password_hash') \
+        .eq('email', email).single().execute()
+
+    if result.status_code != 200 or not result.data:
+        return jsonify({'error': 'ユーザーが見つかりませんでした'}), 401
+
+    coach = result.data
+    stored_hash = coach.get('password_hash')
+
+    # パスワードチェック
+    if not check_password_hash(stored_hash, password):
+        return jsonify({'error': 'パスワードが正しくありません'}), 401
+
+    return jsonify({'id': coach['id'], 'name': coach['name']})
+
+@app.route('/coach/register', methods=['POST'])
+def register_coach():
+    data = request.get_json()
+    name = data.get('name')
+    email = data.get('email')
+    password = data.get('password')
+
+    if not name or not email or not password:
+        return jsonify({'error': '全ての項目を入力してください'}), 400
+
+    # 重複チェック
+    existing = supabase.table('profiles').select('id').eq('email', email).execute()
+    if existing.data:
+        return jsonify({'error': 'このメールアドレスは既に登録されています'}), 409
+
+    hashed_pw = generate_password_hash(password)
+    code_id = f'C{str(uuid.uuid4())[:8]}'
+
+    res = supabase.table('profiles').insert({
+        'name': name,
+        'email': email,
+        'password_hash': hashed_pw,
+        'code_id': code_id,
+        'availability_status': True
+    }).execute()
+
+    if res.status_code == 201:
+        return jsonify({'message': 'コーチを登録しました'}), 201
+    else:
+        return jsonify({'error': '登録に失敗しました'}), 500
+    
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
