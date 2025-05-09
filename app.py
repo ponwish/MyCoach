@@ -383,6 +383,113 @@ def register_coach():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
     
+# ---------- Coach Profile ----------
+@app.route('/coach/profile', methods=['GET', 'PATCH'])
+def coach_profile():
+    coach_id = request.args.get('coachId') or request.form.get('coachId') or request.json.get('coachId')
+    if not coach_id:
+        return jsonify({'error': 'coachId is required'}), 400
+
+    if request.method == 'GET':
+        try:
+            resp = supabase.table('profiles').select('*').eq('id', coach_id).single().execute()
+            return jsonify(resp.data), 200
+        except Exception as e:
+            app.logger.error(f"profile fetch: {e}")
+            return jsonify({'error': 'fetch error'}), 500
+
+    # PATCH
+    data = request.form if request.form else request.json
+    payload = {
+        'name': data.get('name'),
+        'email': data.get('email'),
+        'tel': data.get('tel'),
+        'preference': data.get('preference')
+    }
+    # None を除外
+    payload = {k:v for k,v in payload.items() if v is not None}
+
+    # アイコンアップロード (base64 でも S3 でも適宜変更)
+    if 'icon' in request.files:
+        file = request.files['icon']
+        filename = f'icon_{coach_id}.png'
+        with open(f'/tmp/{filename}', 'wb') as f:
+            f.write(file.read())
+        # ここでは簡便のため Supabase Storage を利用せず presigned URL と想定
+        payload['icon_url'] = f'https://{SUPABASE_URL}/storage/v1/object/public/icons/{filename}'
+
+    try:
+        supabase.table('profiles').update(payload).eq('id', coach_id).execute()
+        return jsonify({'message': 'updated'}), 200
+    except Exception as e:
+        app.logger.error(f"profile update: {e}")
+        return jsonify({'error': 'update error'}), 500
+
+
+# ---------- Coach Clients ----------
+@app.route('/coach/clients', methods=['GET'])
+def coach_clients():
+    coach_id = request.args.get('coachId')
+    if not coach_id:
+        return jsonify([]), 200
+    try:
+        resp = supabase.table('coach_client_map').select('client_id').eq('coach_id', coach_id).execute()
+        ids  = [r['client_id'] for r in resp.data]
+        if not ids:
+            return jsonify([]), 200
+        users = supabase.table('users').select('id,name').in_('id', ids).execute()
+        return jsonify(users.data), 200
+    except Exception as e:
+        app.logger.error(f"clients fetch: {e}")
+        return jsonify([]), 500
+
+
+# ---------- Coach History ----------
+@app.route('/coach/history', methods=['GET'])
+def coach_history():
+    coach_id  = request.args.get('coachId')
+    client_id = request.args.get('clientId')
+    if not (coach_id and client_id):
+        return jsonify([]), 200
+    try:
+        rows = supabase.table('chat_history')\
+            .select('*')\
+            .eq('coach_id', coach_id)\
+            .eq('user_id', client_id)\
+            .order('created_at').execute()
+        return jsonify(rows.data), 200
+    except Exception as e:
+        app.logger.error(f"history fetch: {e}")
+        return jsonify([], 500)
+
+
+# ---------- CSV エクスポート ----------
+@app.route('/coach/history_csv', methods=['GET'])
+def history_csv():
+    coach_id  = request.args.get('coachId')
+    client_id = request.args.get('clientId')
+    if not (coach_id and client_id):
+        return jsonify({'error':'params'}), 400
+    try:
+        import csv, io
+        rows = supabase.table('chat_history')\
+            .select('*')\
+            .eq('coach_id', coach_id)\
+            .eq('user_id', client_id)\
+            .order('created_at').execute().data
+        si = io.StringIO()
+        cw = csv.writer(si)
+        cw.writerow(['role','content','created_at'])
+        for r in rows:
+            cw.writerow([r['role'], r['content'], r['created_at']])
+        return si.getvalue(), 200, {
+            'Content-Type':'text/csv',
+            'Content-Disposition':'attachment; filename=history.csv'
+        }
+    except Exception as e:
+        app.logger.error(f"csv export: {e}")
+        return jsonify({'error':'csv'}), 500
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port)

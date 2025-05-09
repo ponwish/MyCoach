@@ -2,26 +2,17 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>コーチダッシュボード</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <style>
-    body {
-      background-color: #f5f7fa;
-      font-family: 'Segoe UI', sans-serif;
-    }
-    header {
-      background: linear-gradient(90deg, #4facfe, #00f2fe);
-      padding: 16px;
-      color: white;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    main {
-      padding: 20px;
-    }
+    body { background:#f5f7fa;font-family:'Segoe UI',sans-serif; }
+    header { background:linear-gradient(90deg,#4facfe,#00f2fe);padding:16px;color:#fff;font-weight:bold;display:flex;justify-content:space-between;align-items:center; }
+    main   { padding:20px; }
+    #clientList .list-group-item { cursor:pointer; }
+    .chat-bubble { background:#fff;border-radius:12px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.1); }
+    .chat-bubble.user { background:#dcf8c6; }
+    .chat-bubble.ai   { background:#f1f0f0; }
   </style>
 </head>
 <body>
@@ -30,23 +21,167 @@
     <button class="btn btn-outline-light btn-sm" onclick="logout()">ログアウト</button>
   </header>
 
-  <main>
-    <h4>ダッシュボード</h4>
-    <p>ここにクライアント一覧を表示予定です。</p>
+  <main class="container-fluid">
+    <ul class="nav nav-tabs mb-3" id="tabBar">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profileTab">プロフィール設定</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#clientsTab">クライアント一覧</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- 📝 プロフィール設定 -->
+      <div class="tab-pane fade show active" id="profileTab">
+        <div class="card p-3" style="max-width:560px;">
+          <h5 class="mb-3">基本情報</h5>
+          <div class="mb-3"><label class="form-label">名前</label><input id="coachNameInput" class="form-control"></div>
+          <div class="mb-3"><label class="form-label">メールアドレス</label><input id="coachEmailInput" type="email" class="form-control"></div>
+          <div class="mb-3"><label class="form-label">電話番号 (2FA)</label><input id="coachTelInput" class="form-control" placeholder="+81..."></div>
+          <div class="mb-3"><label class="form-label">Preference</label><textarea id="coachPrefInput" class="form-control" rows="3"></textarea></div>
+
+          <div class="mb-3">
+            <label class="form-label">アイコン</label>
+            <input id="iconInput" type="file" accept="image/*" class="form-control">
+            <img id="iconPreview" src="" alt="preview" class="mt-2 rounded-circle" style="width:64px;height:64px;object-fit:cover;display:none;">
+          </div>
+
+          <button class="btn btn-primary w-100" onclick="saveProfile()">保存する</button>
+          <div id="profileMsg" class="small mt-2"></div>
+        </div>
+      </div>
+
+      <!-- 👥 クライアント一覧 -->
+      <div class="tab-pane fade" id="clientsTab">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <h5>担当クライアント</h5>
+            <ul id="clientList" class="list-group small"></ul>
+          </div>
+          <div class="col-md-8">
+            <h5 id="historyTitle">トーク履歴</h5>
+            <div id="historyArea" style="max-height:420px;overflow-y:auto;border:1px solid #ddd;padding:10px;border-radius:8px;"></div>
+            <button id="csvBtn" class="btn btn-outline-secondary mt-2" style="display:none;" onclick="exportCSV()">CSVダウンロード</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <script>
-    // コーチ名の読み込み（ログイン時に保存されている前提）
-    document.addEventListener('DOMContentLoaded', () => {
-      const coachName = localStorage.getItem('coachName') || '未ログイン';
-      document.getElementById('coachName').textContent = coachName;
-    });
+<script>
+  const API = 'https://mycoach.onrender.com';
+  const coachId = localStorage.getItem('coachId');
 
-    function logout() {
-      localStorage.removeItem('coachId');
-      localStorage.removeItem('coachName');
-      window.location.href = 'coach_login.html';
+  /* ---------- 初期化 ---------- */
+  document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('coachName').textContent = localStorage.getItem('coachName') || '未ログイン';
+    await loadProfile();
+    await loadClients();
+  });
+
+  /* ---------- プロフィール ---------- */
+  async function loadProfile() {
+    try {
+      const res = await fetch(`${API}/coach/profile?coachId=${coachId}`);
+      const p   = await res.json();
+      document.getElementById('coachNameInput').value = p.name || '';
+      document.getElementById('coachEmailInput').value = p.email || '';
+      document.getElementById('coachTelInput').value = p.tel || '';
+      document.getElementById('coachPrefInput').value = p.preference || '';
+      if (p.icon_url) {
+        const img = document.getElementById('iconPreview');
+        img.src = p.icon_url; img.style.display = 'block';
+      }
+    } catch { /* ignore */ }
+  }
+
+  async function saveProfile() {
+    const name = document.getElementById('coachNameInput').value.trim();
+    const email= document.getElementById('coachEmailInput').value.trim();
+    const tel  = document.getElementById('coachTelInput').value.trim();
+    const pref = document.getElementById('coachPrefInput').value.trim();
+    const msg  = document.getElementById('profileMsg');
+
+    const body = { name, email, tel, preference: pref };
+    const iconFile = document.getElementById('iconInput').files[0];
+
+    let form;
+    let headers = {};
+    if (iconFile) {
+      form = new FormData();
+      Object.entries(body).forEach(([k,v])=>form.append(k,v));
+      form.append('icon', iconFile);
+    } else {
+      headers['Content-Type']='application/json';
     }
-  </script>
+
+    try {
+      const res = await fetch(`${API}/coach/profile`, {
+        method:'PATCH',
+        headers,
+        body: iconFile ? form : JSON.stringify({coachId,...body})
+      });
+      if (res.ok) { msg.textContent='✅ 保存しました'; msg.style.color='green'; }
+      else        { msg.textContent='❌ 失敗しました'; msg.style.color='red'; }
+    } catch { msg.textContent='通信エラー'; msg.style.color='red'; }
+  }
+
+  /* ---------- クライアント ---------- */
+  async function loadClients() {
+    try {
+      const res = await fetch(`${API}/coach/clients?coachId=${coachId}`);
+      const list = await res.json();
+      const ul = document.getElementById('clientList'); ul.innerHTML='';
+      list.forEach(c=>{
+        const li=document.createElement('li');
+        li.className='list-group-item d-flex justify-content-between align-items-center';
+        li.textContent = c.name || c.id;
+        li.onclick = ()=>showHistory(c.id,c.name);
+        ul.appendChild(li);
+      });
+    } catch { /* ignore */ }
+  }
+
+  let currentHistory = [];
+  async function showHistory(clientId, clientName) {
+    document.getElementById('historyTitle').textContent = `トーク履歴：${clientName}`;
+    document.getElementById('csvBtn').style.display='none';
+    const box = document.getElementById('historyArea'); box.innerHTML='読み込み中...';
+    try {
+      const res = await fetch(`${API}/coach/history?coachId=${coachId}&clientId=${clientId}`);
+      currentHistory = await res.json();
+      box.innerHTML='';
+      currentHistory.forEach(m=>{
+        const div=document.createElement('div');
+        div.className='my-1';
+        const b = document.createElement('div');
+        b.className='chat-bubble '+(m.role==='user'?'user':'ai');
+        b.textContent=m.content;
+        const ts=document.createElement('small');
+        ts.className='text-muted ms-2';
+        ts.textContent=new Date(m.created_at).toLocaleString('ja-JP');
+        div.appendChild(b); div.appendChild(ts);
+        box.appendChild(div);
+      });
+      document.getElementById('csvBtn').style.display='block';
+    } catch { box.textContent='取得に失敗しました'; }
+  }
+
+  function exportCSV() {
+    if (!currentHistory.length) return;
+    const rows = [['role','content','created_at']];
+    currentHistory.forEach(r=>rows.push([r.role,r.content.replace(/\n/g,' '),r.created_at]));
+    const csv = rows.map(r=>r.map(v=>`"${v.replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='history.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ---------- 共通 ---------- */
+  function logout() {
+    localStorage.removeItem('coachId'); localStorage.removeItem('coachName');
+    location.href='coach_login.html';
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
