@@ -607,10 +607,9 @@
       const userMsgDiv = document.createElement('div');
       userMsgDiv.className = 'chat-message user';
       userMsgDiv.innerHTML = `
-        <div class="chat-bubble">
-          ${message}
-          <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>`;
+        <div class="chat-bubble">${message}</div>
+        <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
+      `;
       chat.appendChild(userMsgDiv);
       document.getElementById('talkInput').value = '';
 
@@ -661,10 +660,9 @@
         const aiMsgDiv = document.createElement('div');
         aiMsgDiv.className = 'chat-message assistant';
         aiMsgDiv.innerHTML = `
-          <div class="chat-bubble">
-            ${data.message}
-            <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
-          </div>`;
+          <div class="chat-bubble">${data.message}</div>
+          <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
+          `;
         chat.appendChild(aiMsgDiv);
         chat.scrollTop = chat.scrollHeight;
 
@@ -732,10 +730,8 @@
         const msgWrapper = document.createElement('div');
         msgWrapper.className = `chat-message ${msg.role === 'user' ? 'user' : 'assistant'}`;
         msgWrapper.innerHTML = `
-          <div class="chat-bubble">
-            ${msg.content}
-            <div class="chat-timestamp">${timeStr}</div>
-          </div>
+          <div class="chat-bubble">${msg.content}</div>
+          <div class="chat-timestamp">${timeStr}</div>
         `;
         container.appendChild(msgWrapper);
       });
