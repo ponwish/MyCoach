@@ -303,29 +303,38 @@ def get_chat_history():
 
 @app.route('/coach/login', methods=['POST'])
 def coach_login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
 
-    if not email or not password:
-        return jsonify({'error': 'メールアドレスとパスワードは必須です。'}), 400
+        if not email or not password:
+            return jsonify({'error': 'メールアドレスとパスワードは必須です。'}), 400
 
-    # Supabase から該当するコーチを取得
-    result = supabase.table('profiles') \
-        .select('id, name, password_hash') \
-        .eq('email', email).single().execute()
+        # 該当コーチを取得
+        result = supabase.table('profiles') \
+            .select('id, name, password_hash') \
+            .eq('email', email).single().execute()
 
-    if result.status_code != 200 or not result.data:
-        return jsonify({'error': 'ユーザーが見つかりませんでした'}), 401
+        coach = result.data  # v2では .data でOK
+        if not coach:
+            return jsonify({'error': 'ユーザーが見つかりませんでした'}), 401
 
-    coach = result.data
-    stored_hash = coach.get('password_hash')
+        stored_hash = coach.get('password_hash')
+        if not stored_hash or not check_password_hash(stored_hash, password):
+            return jsonify({'error': 'パスワードが正しくありません'}), 401
 
-    # パスワードチェック
-    if not check_password_hash(stored_hash, password):
-        return jsonify({'error': 'パスワードが正しくありません'}), 401
+        return jsonify({
+            'id': coach['id'],
+            'name': coach['name'],
+            'message': 'ログインに成功しました'
+        }), 200
 
-    return jsonify({'id': coach['id'], 'name': coach['name']})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'サーバーエラー: {str(e)}'}), 500
+
 
 @app.route('/coach/register', methods=['POST'])
 def register_coach():
@@ -343,16 +352,27 @@ def register_coach():
         if existing.data and len(existing.data) > 0:
             return jsonify({'error': 'このメールアドレスは既に登録されています'}), 400
 
+        # ✅ code_id を自動採番
+        latest = supabase.table('profiles') \
+            .select('code_id') \
+            .neq('code_id', None) \
+            .order('code_id', desc=True) \
+            .limit(1).execute()
+
+        max_code = latest.data[0]['code_id'] if latest.data else 'C_0000000'
+        next_number = int(max_code.split('_')[1]) + 1
+        new_code_id = f'C_{next_number:07d}'
+
         # パスワードハッシュ生成
         hashed_pw = generate_password_hash(password)
 
-        # 挿入処理（エラーは except に飛ぶ）
+        # 登録処理
         supabase.table('profiles').insert({
             'id': str(uuid.uuid4()),
             'name': name,
             'email': email,
             'password_hash': hashed_pw,
-            'code_id': f"C{uuid.uuid4().hex[:6].upper()}",
+            'code_id': new_code_id,
             'availability_status': True
         }).execute()
 
@@ -361,8 +381,7 @@ def register_coach():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': f'サーバーエラー: {str(e)}'}), 500
-
+        return jsonify({'error': str(e)}), 500
     
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
