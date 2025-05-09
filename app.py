@@ -607,6 +607,53 @@ def oauth_login():
     except Exception as e:
         app.logger.error(f"[oauth_login] {e}")
         return jsonify({'error': 'oauth login failed'}), 500
+    
+    # ---------------- LINE LIFF: login ----------------
+@app.route('/user/liff_login', methods=['POST'])
+def liff_login():
+    data = request.json or {}
+    line_id = data.get('lineId')
+    if not line_id:
+        return jsonify({'error':'lineId required'}), 400
+    try:
+        row = supabase_admin.table('app_users').select('id').eq('line_id', line_id).single().execute()
+        if row.data:
+            user_id = row.data['id']
+        else:
+            ins = supabase_admin.table('app_users').insert({'line_id': line_id}).execute()
+            user_id = ins.data[0]['id']
+        return jsonify({'userId': user_id}), 200
+    except Exception as e:
+        app.logger.error(f"[liff_login] {e}")
+        return jsonify({'error':'liff login failed'}), 500
+
+# ---------------- LINE LIFF: email link ----------------
+@app.route('/user/liff_link', methods=['POST'])
+def liff_link():
+    data = request.json or {}
+    line_id = data.get('lineId')
+    email   = (data.get('email') or '').strip().lower()
+    if not line_id or not email:
+        return jsonify({'error':'lineId & email required'}), 400
+    try:
+        # email が既に登録済み
+        try:
+            existing = supabase_admin.table('app_users').select('id').eq('email', email).single().execute()
+            user_id  = existing.data['id']
+            supabase_admin.table('app_users').update({'line_id': line_id}).eq('id', user_id).execute()
+        except Exception:
+            # line_id が登録済み
+            try:
+                row = supabase_admin.table('app_users').select('id').eq('line_id', line_id).single().execute()
+                user_id = row.data['id']
+                supabase_admin.table('app_users').update({'email': email}).eq('id', user_id).execute()
+            except Exception:
+                ins = supabase_admin.table('app_users').insert({'line_id': line_id,'email': email}).execute()
+                user_id = ins.data[0]['id']
+        return jsonify({'userId': user_id}), 200
+    except Exception as e:
+        app.logger.error(f"[liff_link] {e}")
+        return jsonify({'error':'liff link failed'}), 500
 
 if __name__ == '__main__':
     # ログにタイムスタンプを出すとデバッグしやすい
