@@ -5,7 +5,7 @@ from supabase import create_client
 from postgrest.exceptions import APIError
 import os
 from datetime import datetime
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
 app = Flask(__name__)
@@ -329,34 +329,29 @@ def coach_login():
 
 @app.route('/coach/register', methods=['POST'])
 def register_coach():
-    data = request.get_json()
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
+    try:
+        data = request.json
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
 
-    if not name or not email or not password:
-        return jsonify({'error': '全ての項目を入力してください'}), 400
+        if not all([name, email, password]):
+            return jsonify({'error': 'Missing fields'}), 400
 
-    # 重複チェック
-    existing = supabase.table('profiles').select('id').eq('email', email).execute()
-    if existing.data:
-        return jsonify({'error': 'このメールアドレスは既に登録されています'}), 409
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    hashed_pw = generate_password_hash(password)
-    code_id = f'C{str(uuid.uuid4())[:8]}'
+        supabase.table('coach_profiles').insert({
+            'name': name,
+            'email': email,
+            'password_hash': hashed
+        }).execute()
 
-    res = supabase.table('profiles').insert({
-        'name': name,
-        'email': email,
-        'password_hash': hashed_pw,
-        'code_id': code_id,
-        'availability_status': True
-    }).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
-    if res.status_code == 201:
-        return jsonify({'message': 'コーチを登録しました'}), 201
-    else:
-        return jsonify({'error': '登録に失敗しました'}), 500
     
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
