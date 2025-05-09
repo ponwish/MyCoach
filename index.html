@@ -191,7 +191,13 @@
     fetch(`${API_BASE_URL}/goal`,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({userId,goal})
-    }).then(r=>r.ok?showSection('coach'):alert('設定失敗'));
+    }).then(r=>{
+      if(!r.ok) return alert('設定失敗');
+      /* ★ 即時反映 */
+      document.getElementById('userGoalText').textContent   = goal;
+      document.getElementById('currentGoalText').textContent= goal;
+      showSection('coach');
+    });
   }
   async function submitGoalEdit(){
     const goal=document.getElementById('goalEditInput').value.trim();
@@ -200,7 +206,13 @@
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({userId,goal})
     });
-    res.ok? (alert('更新しました'),showSection('home')):alert('失敗');
+    if(res.ok){
+      /* ★ 即時反映 */
+      document.getElementById('userGoalText').textContent   = goal;
+      document.getElementById('currentGoalText').textContent= goal;
+      alert('更新しました');
+      showSection('home');
+    }else alert('失敗');
   }
 
   /* ---------- コーチ一覧をロード ---------- */
@@ -220,12 +232,18 @@
 
   /* ---------------- コーチ確定 ---------------- */
   function confirmCoach(){
-    const coachId=document.getElementById('coachSelect').value;
+    const sel   = document.getElementById('coachSelect');
+    const coachId = sel.value;
     if(!coachId)return alert('選択してください');
     fetch(`${API_BASE_URL}/user/assign_coach`,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({userId,coachId})
-    }).then(r=>r.ok&&showSection('chat'));
+    }).then(r=>{
+      if(!r.ok) return alert('更新失敗');
+      /* ★ 即時反映：選択 option のラベルをそのまま表示 */
+      document.getElementById('coachNameText').textContent = sel.options[sel.selectedIndex].text.replace(/（.*?）/,'');
+      showSection('chat');
+    });
   }
 
   /* ---------------- サジェスチョン ---------------- */
