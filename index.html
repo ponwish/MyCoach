@@ -129,7 +129,7 @@
       <li onclick="navigate('coach')">担当変更</li>
       <li onclick="navigate('history')">履歴</li>
       <li onclick="navigate('goal-edit')">目標確認＆変更</li>
-      <li onclick="logout()">ログアウト</li>
+      <li onclick="confirmLogout()">ログアウト</li>
     </ul>
   </div>
   <main>
@@ -615,6 +615,11 @@
       }
     }
 
+    function confirmLogout() {
+  if (confirm("ログアウトしますか？")) {
+    logout();
+  }
+}
 
     async function logout() {
       try {
