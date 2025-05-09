@@ -690,18 +690,16 @@ input:focus, select:focus {
           return;
         }
 
-        // 🤖 GPTメッセージを表示
+        <!-- 🤖 GPTメッセージを表示（アイコン付き） -->
         const aiMsgDiv = document.createElement('div');
         aiMsgDiv.className = 'chat-message assistant';
         aiMsgDiv.innerHTML = `
-        <div class="chat-message assistant">
           <img src="Resource/image/coach_icon.png" alt="Coach Icon" class="chat-icon" />
           <div class="chat-bubble-container">
             <div class="chat-bubble">${data.message}</div>
             <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
-        </div>
-          `;
+        `;
         chat.appendChild(aiMsgDiv);
         chat.scrollTop = chat.scrollHeight;
 
@@ -768,12 +766,22 @@ input:focus, select:focus {
 
         const msgWrapper = document.createElement('div');
         msgWrapper.className = `chat-message ${msg.role === 'user' ? 'user' : 'assistant'}`;
-        msgWrapper.innerHTML = `
-          <div class="chat-bubble-container">
-            <div class="chat-bubble">${msg.content}</div>
-            <div class="chat-timestamp">${timeStr}</div>
-          </div>
-        `;
+        if (msg.role === 'assistant') {
+          msgWrapper.innerHTML = `
+            <img src="Resource/image/coach_icon.png" alt="Coach Icon" class="chat-icon" />
+            <div class="chat-bubble-container">
+              <div class="chat-bubble">${msg.content}</div>
+              <div class="chat-timestamp">${timeStr}</div>
+            </div>
+          `;
+        } else {
+          msgWrapper.innerHTML = `
+            <div class="chat-bubble-container">
+              <div class="chat-bubble">${msg.content}</div>
+              <div class="chat-timestamp">${timeStr}</div>
+            </div>
+          `;
+        }
         container.appendChild(msgWrapper);
       });
 
