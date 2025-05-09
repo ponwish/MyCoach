@@ -338,7 +338,7 @@ def register_coach():
         if not all([name, email, password]):
             return jsonify({'error': '全ての項目を入力してください'}), 400
 
-        # すでに登録済みかチェック
+        # 既存チェック
         existing = supabase.table('profiles').select('id').eq('email', email).execute()
         if existing.data:
             return jsonify({'error': 'このメールアドレスは既に登録されています'}), 400
@@ -346,27 +346,25 @@ def register_coach():
         # パスワードハッシュ化
         hashed_pw = generate_password_hash(password)
 
-        # Supabase に登録
-        response = supabase.table('profiles').insert({
+        # 登録処理
+        result = supabase.table('profiles').insert({
             'id': str(uuid.uuid4()),
             'name': name,
             'email': email,
             'password_hash': hashed_pw,
-            'code_id': f"C{uuid.uuid4().hex[:6].upper()}",  # 任意のコードID生成
+            'code_id': f"C{uuid.uuid4().hex[:6].upper()}",
             'availability_status': True
         }).execute()
 
-        if response.status_code == 201:
-            return jsonify({'success': True, 'message': '登録が完了しました！'}), 201
-        else:
-            return jsonify({'error': '登録に失敗しました'}), 500
+        if result.error:
+            return jsonify({'error': 'Supabaseへの登録に失敗しました'}), 500
+
+        return jsonify({'success': True, 'message': '登録が完了しました！'}), 200
 
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({'error': 'サーバーエラー: ' + str(e)}), 500
-
-
     
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
