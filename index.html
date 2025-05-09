@@ -130,6 +130,20 @@
   margin-bottom: 14px;
 }
 
+.chat-message.assistant .chat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  margin-right: 10px;
+  flex-shrink: 0;
+  border: 2px solid #4facfe; /* 青系の信頼感ある色で縁取り */
+  background-color: #fff;    /* 白背景にして浮きすぎないよう調整 */
+}
+
+.chat-message.user .chat-icon {
+  display: none;
+}
+
 /* ユーザーとAIで位置を切り替え */
 .chat-message.user {
   justify-content: flex-end;
@@ -680,10 +694,13 @@ input:focus, select:focus {
         const aiMsgDiv = document.createElement('div');
         aiMsgDiv.className = 'chat-message assistant';
         aiMsgDiv.innerHTML = `
+        <div class="chat-message assistant">
+          <img src="Resource/image/coach_icon.png" alt="Coach Icon" class="chat-icon" />
           <div class="chat-bubble-container">
             <div class="chat-bubble">${data.message}</div>
             <div class="chat-timestamp">${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
+        </div>
           `;
         chat.appendChild(aiMsgDiv);
         chat.scrollTop = chat.scrollHeight;
