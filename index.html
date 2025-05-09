@@ -105,7 +105,7 @@
     <button onclick="loginWithEmail()" class="btn btn-primary m-2">メールでログイン</button>
     <button onclick="loginWithGoogle()" class="btn btn-danger m-2">Googleでログイン</button>
   </div>
-  <header>
+  <header id="mainHeader" style="display: none;">
     <img src="Resource\image\MyCoach_LOGO.png" alt="MyCoach" id="logo" style="height: 42px; cursor: pointer;" />
     <button id="hamburger">☰</button>
   </header>  
@@ -190,11 +190,13 @@
 
     if (session?.user) {
       userId = session.user.id;
-      localStorage.setItem('supabase-login-success', 'true'); 
+      localStorage.setItem('supabase-login-success', 'true');
       console.log('✅ ログイン成功:', userId);
+      document.getElementById('mainHeader').style.display = 'flex';  // ← これを追加
       showSection('home');
       return;
     }
+
 
     // ✅ LINEログイン（LIFF）確認
     await liff.init({ liffId: '2007334673-1dVleAwO' });
@@ -625,21 +627,15 @@
 
     async function logout() {
       try {
-        // Supabaseセッション削除
         await supabase.auth.signOut();
+        if (liff.isLoggedIn()) liff.logout();
 
-        // LINEログイン中なら LIFFログアウト
-        if (liff.isLoggedIn()) {
-          liff.logout();
-        }
-
-        // ローカル状態クリア
         userId = '';
         suggestionsShown = false;
 
-        // ログイン選択画面に戻す
         hideAll();
         document.getElementById('loginSelector').style.display = 'block';
+        document.getElementById('mainHeader').style.display = 'none'; // ← これを追加
       } catch (err) {
         console.error('ログアウト失敗:', err);
         alert('ログアウトに失敗しました');
@@ -649,6 +645,7 @@
       document.getElementById('chat').innerHTML = '';
       document.getElementById('talkInput').value = '';
     }
+
 
   </script>
 <script type="module">
