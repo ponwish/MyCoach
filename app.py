@@ -386,7 +386,7 @@ def register_coach():
 # ---------- Coach Profile ----------
 @app.route('/coach/profile', methods=['GET', 'PATCH'])
 def coach_profile():
-    coach_id = request.args.get('coachId') or request.form.get('coachId') or request.json.get('coachId')
+    coach_id = request.args.get('coachId') or request.form.get('coachId') or (request.json or {}).get('coachId')
     if not coach_id:
         return jsonify({'error': 'coachId is required'}), 400
 
@@ -406,16 +406,14 @@ def coach_profile():
         'tel': data.get('tel'),
         'preference': data.get('preference')
     }
-    # None を除外
-    payload = {k:v for k,v in payload.items() if v is not None}
+    payload = {k: v for k, v in payload.items() if v is not None}
 
-    # アイコンアップロード (base64 でも S3 でも適宜変更)
+    # アイコン
     if 'icon' in request.files:
         file = request.files['icon']
         filename = f'icon_{coach_id}.png'
         with open(f'/tmp/{filename}', 'wb') as f:
             f.write(file.read())
-        # ここでは簡便のため Supabase Storage を利用せず presigned URL と想定
         payload['icon_url'] = f'https://{SUPABASE_URL}/storage/v1/object/public/icons/{filename}'
 
     try:
@@ -432,13 +430,23 @@ def coach_clients():
     coach_id = request.args.get('coachId')
     if not coach_id:
         return jsonify([]), 200
+
     try:
+        # ① coach_client_map から user_id 抽出
         resp = supabase.table('coach_client_map').select('client_id').eq('coach_id', coach_id).execute()
-        ids  = [r['client_id'] for r in resp.data]
+        ids = [r['client_id'] for r in resp.data]
         if not ids:
             return jsonify([]), 200
-        users = supabase.table('users').select('id,name').in_('id', ids).execute()
-        return jsonify(users.data), 200
+
+        # ② auth.users から email を名前代わりに取得（Schema 指定がポイント）
+        try:
+            auth_users = supabase.table('users', schema='auth').select('id, email').in_('id', ids).execute()
+            users = [{'id': u['id'], 'name': u['email']} for u in auth_users.data]
+        except Exception:
+            # auth.users が取れない場合は ID だけ返却
+            users = [{'id': i, 'name': ''} for i in ids]
+
+        return jsonify(users), 200
     except Exception as e:
         app.logger.error(f"clients fetch: {e}")
         return jsonify([]), 500
@@ -447,16 +455,18 @@ def coach_clients():
 # ---------- Coach History ----------
 @app.route('/coach/history', methods=['GET'])
 def coach_history():
-    coach_id  = request.args.get('coachId')
+    coach_id = request.args.get('coachId')
     client_id = request.args.get('clientId')
     if not (coach_id and client_id):
         return jsonify([]), 200
     try:
-        rows = supabase.table('chat_history')\
-            .select('*')\
-            .eq('coach_id', coach_id)\
-            .eq('user_id', client_id)\
-            .order('created_at').execute()
+        rows = (supabase
+                .table('chat_history')
+                .select('*')
+                .eq('coach_id', coach_id)
+                .eq('user_id', client_id)
+                .order('created_at', desc=False)
+                .execute())
         return jsonify(rows.data), 200
     except Exception as e:
         app.logger.error(f"history fetch: {e}")
@@ -466,29 +476,32 @@ def coach_history():
 # ---------- CSV エクスポート ----------
 @app.route('/coach/history_csv', methods=['GET'])
 def history_csv():
-    coach_id  = request.args.get('coachId')
+    coach_id = request.args.get('coachId')
     client_id = request.args.get('clientId')
     if not (coach_id and client_id):
-        return jsonify({'error':'params'}), 400
+        return jsonify({'error': 'params'}), 400
     try:
         import csv, io
-        rows = supabase.table('chat_history')\
-            .select('*')\
-            .eq('coach_id', coach_id)\
-            .eq('user_id', client_id)\
-            .order('created_at').execute().data
+        rows = (supabase
+                .table('chat_history')
+                .select('*')
+                .eq('coach_id', coach_id)
+                .eq('user_id', client_id)
+                .order('created_at', desc=False)
+                .execute()
+                .data)
         si = io.StringIO()
         cw = csv.writer(si)
-        cw.writerow(['role','content','created_at'])
+        cw.writerow(['role', 'content', 'created_at'])
         for r in rows:
             cw.writerow([r['role'], r['content'], r['created_at']])
         return si.getvalue(), 200, {
-            'Content-Type':'text/csv',
-            'Content-Disposition':'attachment; filename=history.csv'
+            'Content-Type': 'text/csv',
+            'Content-Disposition': 'attachment; filename=history.csv'
         }
     except Exception as e:
         app.logger.error(f"csv export: {e}")
-        return jsonify({'error':'csv'}), 500
+        return jsonify({'error': 'csv'}), 500
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
