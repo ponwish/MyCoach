@@ -4,9 +4,9 @@ from openai import OpenAI
 from supabase import create_client
 from postgrest.exceptions import APIError
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
-import uuid, logging
+import uuid, logging, traceback
 
 app = Flask(__name__)
 app.config.update(
@@ -31,9 +31,16 @@ ADMIN_ID = os.getenv("ADMIN_ID", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "password1234")
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+SUPABASE_URL                = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY   = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # 管理/DB 用
+SUPABASE_ANON_KEY           = os.getenv("SUPABASE_ANON_KEY")          # 認証用
+
+# 🔑 クライアントを 2 系統に分離
+supabase_admin  = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)  # 旧 supabase
+supabase_public = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+# ----------------- 以降は supabase_admin を従来の supabase として利用 -----------------
+supabase = supabase_admin
 
 @app.route('/admin/login', methods=['POST'])
 def admin_login():
@@ -514,18 +521,17 @@ def user_signup():
         return jsonify({'error': 'email & password required'}), 400
 
     try:
-        # 1) Supabase Auth Admin でユーザ作成（メール確認済みとして登録）
-        auth_res = supabase.auth.admin.create_user(
-            {
-                "email": email,
-                "password": password,
-                "email_confirm": True          # ← ここを True に変更
-            }
-        )
-        auth_id = auth_res.user.id  # uuid
+        # 1) Public クライアントで sign_up
+        res = supabase_public.auth.sign_up({"email": email, "password": password})
+        auth_id = res.user.id
 
-        # 2) app_users へ INSERT（id はシーケンスで自動採番）
-        inserted = supabase.table('app_users').insert({
+        # 2) メール確認を即時済みに変更
+        supabase_admin.auth.admin.update_user_by_id(auth_id, {
+            "email_confirmed_at": datetime.now(timezone.utc).isoformat()
+        })
+
+        # 3) app_users に INSERT（id はシーケンスで自動採番）
+        inserted = supabase_admin.table('app_users').insert({
             'auth_id': auth_id,
             'name': name,
             'email': email
@@ -549,28 +555,18 @@ def user_login():
         return jsonify({'error': 'email & password required'}), 400
 
     try:
-        # 1) Supabase Auth で認証
-        auth_res = supabase.auth.sign_in_with_password(
-            {"email": email, "password": password}
-        )
+        # 1) anon key で認証
+        auth_res = supabase_public.auth.sign_in_with_password({"email": email, "password": password})
         auth_id  = auth_res.user.id
 
-        # 2) アプリ独自 ID を取得（存在しなければ作成）
-        try:
-            u = (supabase
-                 .table('app_users')
-                 .select('id')
-                 .eq('auth_id', auth_id)
-                 .single()
-                 .execute())
-            user_id = u.data['id']
-        except Exception:
-            # app_users に無い場合は自動挿入
-            inserted = supabase.table('app_users').insert({
-                'auth_id': auth_id,
-                'email': email
-            }).execute()
-            user_id = inserted.data[0]['id']
+        # 2) アプリ独自 ID を取得
+        u = (supabase_admin
+             .table('app_users')
+             .select('id')
+             .eq('auth_id', auth_id)
+             .single()
+             .execute())
+        user_id = u.data['id']
 
         return jsonify({'userId': user_id}), 200
 
