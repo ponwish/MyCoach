@@ -106,9 +106,9 @@
     <button onclick="loginWithGoogle()" class="btn btn-danger m-2">Googleでログイン</button>
   </div>
   <header>
-    <h1>AIコーチング 2025</h1>
+    <img src="Resource\image\MyCoach_LOGO.png" alt="MyCoach" id="logo" style="height: 42px; cursor: pointer;" />
     <button id="hamburger">☰</button>
-  </header>
+  </header>  
   <div id="home-area" class="card" style="display:none;">
     <h4 class="mb-4 text-center">AIコーチング メニュー</h4>
     <button class="btn btn-primary w-100 mb-3" onclick="navigate('chat')">💬 チャットをはじめる</button>
@@ -347,7 +347,9 @@
       if (section === 'history') await loadHistory();
     }
 
-
+    document.getElementById('logo').addEventListener('click', () => {
+  showSection('home');
+});
 
     function submitGoal() {
       const goal = document.getElementById('goalInput').value.trim();
