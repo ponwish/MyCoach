@@ -154,7 +154,11 @@
   document.addEventListener('DOMContentLoaded', async () => {
     try {
       // --- ① Supabase セッション確認 ---
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (!session) {
+        // ✅ ログイン画面に誘導
+        location.replace('/static/user_login.html');
+      }
 
       if (session?.user) {
         userId = session.user.id;

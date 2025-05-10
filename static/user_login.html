@@ -1,3 +1,4 @@
+<!-- ✅ 完全実装版 user_login.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -11,11 +12,10 @@
     .card{max-width:420px;margin:auto;top:50%;transform:translateY(20%);box-shadow:0 4px 10px rgba(0,0,0,.07)}
     .oauth-btn img{height:20px;margin-right:6px}
   </style>
-
-  <!-- 公開定数 -->
   <script>
     const SUPABASE_URL   = "https://kyxneqqadoyqxsmohbop.supabase.co";
-    const LIFF_ID        = "2007334673-1dVleAwO";        /* ← 自分の LIFF ID */
+    const API_BASE_URL   = "https://mycoach.onrender.com";
+    const LIFF_ID        = "2007334673-1dVleAwO";
     const FRONTEND_HOME  = "/index.html";
   </script>
 </head>
@@ -32,15 +32,14 @@
       <div class="tab-pane fade show active" id="signinTab">
         <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="loginWithGoogle()">
           <img src="https://www.svgrepo.com/show/475656/google-color.svg">Google でサインイン
-        </button>        
+        </button>
         <button class="btn btn-outline-success w-100 mb-3 oauth-btn" onclick="liffLogin()">
           <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE でサインイン
         </button>
-
-        <div class="mb-3"><input id="inEmail"  class="form-control" placeholder="メールアドレス"></div>
-        <div class="mb-3"><input id="inPass"   type="password" class="form-control" placeholder="パスワード"></div>
+        <div class="mb-3"><input id="inEmail" class="form-control" placeholder="メールアドレス"></div>
+        <div class="mb-3"><input id="inPass" type="password" class="form-control" placeholder="パスワード"></div>
         <button class="btn btn-primary w-100" onclick="emailSignIn()">メールでサインイン</button>
-        <div id="inMsg" class="small mt-2"></div>
+        <div id="inMsg" class="small mt-2 text-danger"></div>
       </div>
 
       <!-- サインアップ -->
@@ -62,120 +61,124 @@
         <button class="btn btn-outline-success w-100 oauth-btn" onclick="lineEmailLink()">
           <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE と連携
         </button>
-        <div id="linkMsg" class="small mt-2"></div>
+        <div id="linkMsg" class="small mt-2 text-danger"></div>
       </div>
     </div>
   </div>
 
   <script type="module">
-      import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-      const supabase = createClient(SUPABASE_URL, "PUBLIC_ANON_KEY");
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    const supabase = createClient(SUPABASE_URL, "PUBLIC_ANON_KEY");
+    window.supabase = supabase;
 
-      window.supabase = supabase;  // グローバルにも公開
+    supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) return;
 
-      // ✅ Supabase OAuth (Google) のコールバック監視
-      supabase.auth.onAuthStateChange(async (_e, sess) => {
-        if (!sess) return;
+      const sessionEmail = session.user.email?.toLowerCase() || '';
+      const pendingEmail = (localStorage.getItem('pendingEmail') || '').toLowerCase();
 
-        // ✅ 👇 ここに追加してください（メールアドレスの一致を確認）
-        const sessionEmail = sess.user.email.toLowerCase();
-        const pendingEmail = (localStorage.getItem('pendingEmail') || '').toLowerCase();
+      if (pendingEmail && pendingEmail !== sessionEmail) {
+        alert("Google アカウントと入力したメールが一致しません");
+        await supabase.auth.signOut();
+        return;
+      }
 
-        if (pendingEmail && pendingEmail !== sessionEmail) {
-          alert("Google アカウントと入力したメールが一致しません");
+      try {
+        const res = await fetch(`${API_BASE_URL}/user/oauth_login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ authId: session.user.id, email: sessionEmail })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('userId', data.userId);
+          localStorage.removeItem('pendingEmail');
+          location.href = FRONTEND_HOME;
+        } else {
+          document.getElementById('inMsg').textContent = data.error || 'このGoogleアカウントは未連携です';
           await supabase.auth.signOut();
-          return;
         }
+      } catch {
+        document.getElementById('inMsg').textContent = '通信エラーが発生しました';
+        await supabase.auth.signOut();
+      }
+    });
+  </script>
 
-        try {
-          const r = await fetch('https://mycoach.onrender.com/user/oauth_login', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-              authId: sess.user.id,
-              email: pendingEmail || sessionEmail
-            })
-          });
-          const j = await r.json();
-          if (r.ok) {
-            localStorage.setItem('userId', j.userId);
-            localStorage.removeItem('pendingEmail');
-            location.href = "/index.html";
-          } else {
-            document.getElementById('linkMsg').textContent = j.error || '失敗';
-          }
-        } catch {
-          document.getElementById('linkMsg').textContent = '通信エラー';
-        }
+  <script>
+    function loginWithGoogle() {
+      supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: location.href }
       });
-  
-    // ✅ メール連携付きGoogleログイン
+    }
+
+    const API = 'https://mycoach.onrender.com';
+
     function googleEmailLink(){
       const email = linkEmail.value.trim();
       if (!email) return alert('メールを入力');
       localStorage.setItem('pendingEmail', email);
       loginWithGoogle();
     }
-  </script>
 
-<script>
-  // ✅ グローバルスコープで使えるよう分離（type="module" の外に定義）
-  function loginWithGoogle() {
-    supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: location.href
+    async function liffLogin(){ await ensureLiffReady(); if(!liff.isLoggedIn()) liff.login({ redirectUri: location.href }); else await processLiffProfile(); }
+    async function lineEmailLink(){ const email = linkEmail.value.trim(); if(!email) return alert('メールを入力'); await ensureLiffReady(); if(!liff.isLoggedIn()) liff.login({ redirectUri: location.href+'?linkEmail='+encodeURIComponent(email) }); else await processLiffProfile(email); }
+    async function ensureLiffReady(){ if(!window.liff || liff.id !== LIFF_ID) await liff.init({ liffId: LIFF_ID }); }
+    async function processLiffProfile(forcedEmail){
+      const profile = await liff.getProfile();
+      const lineId  = profile.userId;
+      const email   = forcedEmail || new URL(location.href).searchParams.get('linkEmail') || '';
+      const endpoint = email ? '/user/liff_link' : '/user/liff_login';
+      const body     = email ? { lineId,email } : { lineId };
+      const r = await fetch(`${API}${endpoint}`,{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body) });
+      const j = await r.json();
+      if(r.ok){ localStorage.setItem('userId', j.userId); location.href = FRONTEND_HOME; }
+      else alert(j.error||'失敗');
+    }
+
+    async function emailSignIn() {
+      const email = inEmail.value.trim(), pass = inPass.value;
+      if (!email || !pass) return alert('入力してください');
+      inMsg.textContent = '...';
+      try {
+        const r = await fetch(`${API}/user/login`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass })
+        });
+        const j = await r.json();
+        if (r.ok) {
+          localStorage.setItem('userId', j.userId);
+          location.href = FRONTEND_HOME;
+        } else {
+          inMsg.textContent = j.error || 'ログイン失敗';
+        }
+      } catch {
+        inMsg.textContent = '通信エラー';
       }
-    });
-  }
-</script>
+    }
 
-<script>
-  const API = 'https://mycoach.onrender.com';
-
-  /* ---------- Supabase Google ---------- */
-  function directOAuthGoogle(){
-    const redirect = encodeURIComponent(location.origin + FRONTEND_HOME);
-    location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirect}`;
-  }
-
-  /* ---------- LINE (LIFF) ---------- */
-  async function liffLogin(){
-    await ensureLiffReady();
-    if(!liff.isLoggedIn()) liff.login({ redirectUri: location.href });
-    else await processLiffProfile();
-  }
-  async function lineEmailLink(){
-    const email = linkEmail.value.trim();
-    if(!email) return alert('メールを入力');
-    await ensureLiffReady();
-    if(!liff.isLoggedIn()) liff.login({ redirectUri: location.href+'?linkEmail='+encodeURIComponent(email) });
-    else await processLiffProfile(email);
-  }
-  async function ensureLiffReady(){
-    if(!window.liff || liff.id !== LIFF_ID) await liff.init({ liffId: LIFF_ID });
-  }
-  async function processLiffProfile(forcedEmail){
-    const profile = await liff.getProfile();
-    const lineId  = profile.userId;
-    const email   = forcedEmail || new URL(location.href).searchParams.get('linkEmail') || '';
-    /* API 呼び分け */
-    const endpoint = email ? '/user/liff_link' : '/user/liff_login';
-    const body     = email ? { lineId,email } : { lineId };
-    const r = await fetch(`${API}${endpoint}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
-    });
-    const j = await r.json();
-    if(r.ok){
-      localStorage.setItem('userId', j.userId);
-      location.href = FRONTEND_HOME;
-    }else alert(j.error||'失敗');
-  }
-
-  /* ---------- メール／パスワード ---------- */
-  async function emailSignIn(){ /* …既存処理は変わらず… */ }
-  async function emailSignUp(){ /* …既存処理は変わらず… */ }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    async function emailSignUp() {
+      const name = upName.value.trim(), email = upEmail.value.trim(), pass = upPass.value;
+      if (!email || !pass) return alert('入力してください');
+      upMsg.textContent = '...';
+      try {
+        const r = await fetch(`${API}/user/signup`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password: pass })
+        });
+        const j = await r.json();
+        if (r.ok) {
+          upMsg.textContent = '登録完了！ログインしてください';
+          upMsg.style.color = 'green';
+        } else {
+          upMsg.textContent = j.error || '失敗';
+        }
+      } catch {
+        upMsg.textContent = '通信エラー';
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
