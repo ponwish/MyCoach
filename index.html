@@ -156,9 +156,27 @@
       // --- ① Supabase セッション確認 ---
       const { data: { session }, error } = await supabase.auth.getSession();
       if (!session) {
-        // ✅ ログイン画面に誘導
-        location.replace('/static/user_login.html');
+      // ② LINE がログインしていれば LIFF フローへ
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        lineId = profile.userId;
+        const r = await fetch(`${API_BASE_URL}/user/liff_login`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ lineId })
+        });
+        if (r.ok) {
+          const { userId } = await r.json();
+          localStorage.setItem('userId', userId);
+          finalizeLogin();
+          return;
+        }
       }
+      // ③ ローカルに userId があればオフライン前提で続行
+      if (localStorage.getItem('userId')) { finalizeLogin(); return; }
+      // ④ どれも無ければログイン画面へ
+      location.replace('/static/user_login.html');
+    }
 
       if (session?.user) {
         userId = session.user.id;
