@@ -68,6 +68,12 @@
 
     const API = 'https://mycoach.onrender.com';
 
+    async function ensureLiffReady() {
+      if (!window.liff || liff.id !== LIFF_ID) {
+        await liff.init({ liffId: LIFF_ID });
+      }
+    }
+
     async function liffLogin() {
       try {
         await ensureLiffReady();
