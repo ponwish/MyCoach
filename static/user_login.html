@@ -73,7 +73,29 @@
         await liff.init({ liffId: LIFF_ID });
       }
     }
-
+    async function processLiffProfile(forcedEmail){
+      try {
+        const profile = await liff.getProfile();  // ← ここで revoked エラーになることがある
+        const lineId  = profile.userId;
+        const email   = forcedEmail || new URL(location.href).searchParams.get('linkEmail') || '';
+        const endpoint = email ? '/user/liff_link' : '/user/liff_login';
+        const body     = email ? { lineId,email } : { lineId };
+        const r = await fetch(`${API_BASE_URL}${endpoint}`,{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+        });
+        const j = await r.json();
+        if(r.ok){
+          localStorage.setItem('userId', j.userId);
+          location.href = FRONTEND_HOME;
+        } else {
+          alert(j.error || '失敗');
+        }
+      } catch (err) {
+        console.warn('LIFF access token revoked. Forcing logout and re-login.');
+        await liff.logout();
+        liff.login({ redirectUri: location.href });
+      }
+    }
     async function liffLogin() {
       try {
         await ensureLiffReady();
