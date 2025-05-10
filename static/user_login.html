@@ -48,10 +48,6 @@
         <div class="mb-3"><input id="upEmail" class="form-control" placeholder="メールアドレス"></div>
         <div class="mb-3"><input id="upPass"  type="password" class="form-control" placeholder="パスワード (6文字以上)"></div>
         <button class="btn btn-success w-100" onclick="emailSignUp()">メールでサインアップ</button>
-        <!-- ★ 追加: LINE サインアップ -->
-        <button class="btn btn-outline-success w-100 oauth-btn" onclick="lineSignup()">
-          <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE アカウントでサインアップ
-        </button>
         <div id="upMsg" class="small mt-2"></div>
       </div>
 
@@ -124,25 +120,6 @@
       if (!email) return alert('メールを入力');
       localStorage.setItem('pendingEmail', email);
       loginWithGoogle();
-    }
-
-    async function lineSignup(){
-      const email = upEmail.value.trim();
-      if(!email) return alert('メールを入力');
-
-      try{
-        await ensureLiffReady();
-        // 未ログインなら LINE OAuth → 戻り先にメールをクエリで保持
-        if(!liff.isLoggedIn()){
-          liff.login({ redirectUri: `${location.href}?linkEmail=${encodeURIComponent(email)}` });
-          return;      // ← OAuth へ遷移
-        }
-        // すでに LIFF ログイン済みなら即登録
-        await processLiffProfile(email);
-      }catch(e){
-        console.error('LINE signup error', e);
-        localStorage.removeItem('pendingEmail');
-      }
     }
 
     async function liffLogin() {
