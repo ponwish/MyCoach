@@ -93,16 +93,6 @@
       }
     });
   
-    // ✅ 👇 過去のやり方を踏襲した Google ログイン関数
-    async function loginWithGoogle() {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: location.href
-        }
-      });
-    }
-  
     // ✅ メール連携付きGoogleログイン
     function googleEmailLink(){
       const email = linkEmail.value.trim();
@@ -111,7 +101,18 @@
       loginWithGoogle();
     }
   </script>
-  
+
+<script>
+  // ✅ グローバルスコープで使えるよう分離（type="module" の外に定義）
+  function loginWithGoogle() {
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: location.href
+      }
+    });
+  }
+</script>
 
 <script>
   const API = 'https://mycoach.onrender.com';
@@ -120,12 +121,6 @@
   function directOAuthGoogle(){
     const redirect = encodeURIComponent(location.origin + FRONTEND_HOME);
     location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirect}`;
-  }
-  function googleEmailLink(){
-    const email = linkEmail.value.trim();
-    if(!email) return alert('メールを入力');
-    localStorage.setItem('pendingEmail', email);
-    directOAuthGoogle();
   }
 
   /* ---------- LINE (LIFF) ---------- */
