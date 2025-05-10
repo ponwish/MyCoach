@@ -24,7 +24,6 @@
     <ul class="nav nav-tabs mb-3">
       <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#signinTab">サインイン</button></li>
       <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#signupTab">サインアップ</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#oauthLinkTab">メール連携 (Google / LINE)</button></li>
     </ul>
 
     <div class="tab-content">
@@ -50,19 +49,6 @@
         <button class="btn btn-success w-100" onclick="emailSignUp()">メールでサインアップ</button>
         <div id="upMsg" class="small mt-2"></div>
       </div>
-
-      <!-- OAuth メール連携 -->
-      <div class="tab-pane fade" id="oauthLinkTab">
-        <p class="small text-muted">Google / LINE アカウントをお持ちの場合は、メールアドレスと紐づけて登録できます。</p>
-        <div class="mb-3"><input id="linkEmail" class="form-control" placeholder="メールアドレス"></div>
-        <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="googleEmailLink()">
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg">Google と連携
-        </button>
-        <button class="btn btn-outline-success w-100 oauth-btn" onclick="lineEmailLink()">
-          <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE と連携
-        </button>
-        <div id="linkMsg" class="small mt-2 text-danger"></div>
-      </div>
     </div>
   </div>
 
@@ -70,39 +56,6 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const supabase = createClient(SUPABASE_URL, "PUBLIC_ANON_KEY");
     window.supabase = supabase;
-
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session?.user) return;
-
-      const sessionEmail = session.user.email?.toLowerCase() || '';
-      const pendingEmail = (localStorage.getItem('pendingEmail') || '').toLowerCase();
-
-      if (pendingEmail && pendingEmail !== sessionEmail) {
-        alert("Google アカウントと入力したメールが一致しません");
-        await supabase.auth.signOut();
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/user/oauth_login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ authId: session.user.id, email: sessionEmail })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          localStorage.setItem('userId', data.userId);
-          localStorage.removeItem('pendingEmail');
-          location.href = FRONTEND_HOME;
-        } else {
-          document.getElementById('inMsg').textContent = data.error || 'このGoogleアカウントは未連携です';
-          await supabase.auth.signOut();
-        }
-      } catch {
-        document.getElementById('inMsg').textContent = '通信エラーが発生しました';
-        await supabase.auth.signOut();
-      }
-    });
   </script>
 
   <script>
@@ -114,13 +67,6 @@
     }
 
     const API = 'https://mycoach.onrender.com';
-
-    function googleEmailLink(){
-      const email = linkEmail.value.trim();
-      if (!email) return alert('メールを入力');
-      localStorage.setItem('pendingEmail', email);
-      loginWithGoogle();
-    }
 
     async function liffLogin() {
       try {
@@ -134,45 +80,6 @@
         console.error("LIFFログインエラー", e);
       }
     }
-    async function lineEmailLink() {
-      const email = linkEmail.value.trim();
-      if (!email) return alert('メールを入力');
-      try {
-        await ensureLiffReady();
-        if (!liff.isLoggedIn()) {
-          liff.login({ redirectUri: location.href + '?linkEmail=' + encodeURIComponent(email) });
-        } else {
-          await processLiffProfile(email);
-        }
-      } catch (e) {
-        console.error("LIFFメールリンクエラー", e);
-      }
-    }
-    async function ensureLiffReady(){ if(!window.liff || liff.id !== LIFF_ID) await liff.init({ liffId: LIFF_ID }); }
-    async function processLiffProfile(forcedEmail){
-  try {
-    const profile = await liff.getProfile();  // ← ここで revoked エラーになることがある
-    const lineId  = profile.userId;
-    const email   = forcedEmail || new URL(location.href).searchParams.get('linkEmail') || '';
-    const endpoint = email ? '/user/liff_link' : '/user/liff_login';
-    const body     = email ? { lineId,email } : { lineId };
-    const r = await fetch(`${API}${endpoint}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
-    });
-    const j = await r.json();
-    if(r.ok){
-      localStorage.setItem('userId', j.userId);
-      location.href = FRONTEND_HOME;
-    } else {
-      alert(j.error || '失敗');
-    }
-  } catch (err) {
-    console.warn('LIFF access token revoked. Forcing logout and re-login.');
-    await liff.logout();
-    liff.login({ redirectUri: location.href });
-  }
-}
-
 
     localStorage.removeItem('pendingEmail'); 
 

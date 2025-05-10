@@ -60,7 +60,7 @@
   <button id="hamburger">☰</button>
 </header>
 
-<!-- ===== メニュー ===== -->
+<!-- ハンバーガーメニュー -->
 <div id="menu">
   <ul>
     <li onclick="navigate('home')">ホーム</li>
@@ -68,6 +68,7 @@
     <li onclick="navigate('coach')">担当変更</li>
     <li onclick="navigate('history')">履歴</li>
     <li onclick="navigate('goal-edit')">目標変更</li>
+    <li onclick="navigate('link')">アカウント連携</li> <!-- ✅ 追加 -->
     <li onclick="logout()">ログアウト</li>
   </ul>
 </div>
@@ -81,8 +82,30 @@
     <button class="btn btn-success w-100 mb-3" onclick="navigate('coach')">👨‍🏫 コーチを変更</button>
     <button class="btn btn-secondary w-100"      onclick="navigate('history')">📜 チャット履歴を見る</button>
     <button class="btn btn-outline-secondary w-100" onclick="navigate('goal-edit')">🎯 目標を変更</button>
+    <hr class="my-3">
+    <h6 class="text-muted">アカウント連携</h6>
+    <input id="linkEmail" class="form-control mb-2" placeholder="メールアドレスを入力" />
+    <button class="btn btn-outline-secondary w-100 mb-2" onclick="googleEmailLink()">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" style="height:20px; margin-right:6px;">Google と連携
+    </button>
+    <button class="btn btn-outline-success w-100" onclick="lineEmailLink()">
+      <img src="https://www.svgrepo.com/show/473502/line-line.svg" style="height:20px; margin-right:6px;">LINE と連携
+    </button>
+    <div id="linkMsg" class="small mt-2 text-danger"></div>
   </div>
-
+  <!-- アカウント連携 -->
+  <div id="link-area" class="card" style="display:none;">
+    <h4 class="mb-3">アカウント連携</h4>
+    <input id="linkEmail" class="form-control mb-2" placeholder="メールアドレスを入力" />
+    <button class="btn btn-outline-secondary w-100 mb-2" onclick="googleEmailLink()">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" style="height:20px; margin-right:6px;">Google と連携
+    </button>
+    <button class="btn btn-outline-success w-100" onclick="lineEmailLink()">
+      <img src="https://www.svgrepo.com/show/473502/line-line.svg" style="height:20px; margin-right:6px;">LINE と連携
+    </button>
+    <div id="linkMsg" class="small mt-2 text-danger"></div>
+  </div>
+    
   <!-- 目標新規設定 -->
   <div id="goal-area" class="card" style="display:none;">
     <h4>あなたの目標を教えてください</h4>
@@ -137,6 +160,38 @@
     'https://kyxneqqadoyqxsmohbop.supabase.co',
     'PUBLIC_ANON_KEY'          /* ← anon キーに置換 */
   );
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) return;
+
+      const sessionEmail = session.user.email?.toLowerCase() || '';
+      const pendingEmail = (localStorage.getItem('pendingEmail') || '').toLowerCase();
+
+      if (pendingEmail && pendingEmail !== sessionEmail) {
+        alert("Google アカウントと入力したメールが一致しません");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/user/oauth_login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ authId: session.user.id, email: sessionEmail })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('userId', data.userId);
+          localStorage.removeItem('pendingEmail');
+          location.href = FRONTEND_HOME;
+        } else {
+          document.getElementById('linkMsg').textContent = data.error || 'このGoogleアカウントは未連携です';
+          await supabase.auth.signOut();
+        }
+      } catch {
+        document.getElementById('linkMsg').textContent = '通信エラーが発生しました';
+        await supabase.auth.signOut();
+      }
+    });
   window.supabase = supabase;
 </script>
 
@@ -226,6 +281,53 @@
     loadHistory();
   }
 
+  function googleEmailLink(){
+      const email = linkEmail.value.trim();
+      if (!email) return alert('メールを入力');
+      localStorage.setItem('pendingEmail', email);
+      loginWithGoogle();
+    }
+
+    async function lineEmailLink() {
+      const email = linkEmail.value.trim();
+      if (!email) return alert('メールを入力');
+      try {
+        await ensureLiffReady();
+        if (!liff.isLoggedIn()) {
+          liff.login({ redirectUri: location.href + '?linkEmail=' + encodeURIComponent(email) });
+        } else {
+          await processLiffProfile(email);
+        }
+      } catch (e) {
+        console.error("LIFFメールリンクエラー", e);
+      }
+    }
+
+    async function ensureLiffReady(){ if(!window.liff || liff.id !== LIFF_ID) await liff.init({ liffId: LIFF_ID }); }
+
+    async function processLiffProfile(forcedEmail){
+      try {
+        const profile = await liff.getProfile();  // ← ここで revoked エラーになることがある
+        const lineId  = profile.userId;
+        const email   = forcedEmail || new URL(location.href).searchParams.get('linkEmail') || '';
+        const endpoint = email ? '/user/liff_link' : '/user/liff_login';
+        const body     = email ? { lineId,email } : { lineId };
+        const r = await fetch(`${API_BASE_URL}${endpoint}`,{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+        });
+        const j = await r.json();
+        if(r.ok){
+          localStorage.setItem('userId', j.userId);
+          location.href = FRONTEND_HOME;
+        } else {
+          alert(j.error || '失敗');
+        }
+      } catch (err) {
+        console.warn('LIFF access token revoked. Forcing logout and re-login.');
+        await liff.logout();
+        liff.login({ redirectUri: location.href });
+      }
+    }
 
   /* =========== メール → Supabase ログイン監視 =========== */
   function startPollingSession(){
@@ -257,13 +359,13 @@
 
   /* ---------------- ナビゲーション ---------------- */
   function hideAll(){
-    ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area']
+    ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area','link-area']
       .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   }
   function showSection(s){
     hideAll();
     const map={home:'home-area',chat:'chat-area',coach:'coach-select-area',
-              history:'history-area','goal-edit':'goal-edit-area',goal:'goal-area'};
+              history:'history-area','goal-edit':'goal-edit-area',goal:'goal-area',link:'link-area'};
     document.getElementById(map[s]).style.display='block';
     if(s==='chat') initSuggestions();
   }
