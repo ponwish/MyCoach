@@ -23,7 +23,6 @@
   <div class="card p-4">
     <ul class="nav nav-tabs mb-3">
       <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#signinTab">サインイン</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#signupTab">サインアップ</button></li>
     </ul>
 
     <div class="tab-content">
@@ -39,6 +38,9 @@
         <div class="mb-3"><input id="inPass" type="password" class="form-control" placeholder="パスワード"></div>
         <button class="btn btn-primary w-100" onclick="emailSignIn()">メールでサインイン</button>
         <div id="inMsg" class="small mt-2 text-danger"></div>
+        <div class="text-center mt-3">
+          <a href="#" onclick="showSignup()">新規登録はこちら</a>
+        </div>        
       </div>
 
       <!-- サインアップ -->
@@ -59,6 +61,12 @@
   </script>
 
   <script>
+    function showSignup() {
+      document.querySelector('#signinTab').classList.remove('show', 'active');
+      document.querySelector('#signupTab').classList.add('show', 'active');
+      document.querySelector('button[data-bs-target="#signinTab"]').classList.remove('active');
+      document.querySelector('button[data-bs-target="#signupTab"]').classList.add('active');
+    }
     function loginWithGoogle() {
       supabase.auth.signInWithOAuth({
         provider: 'google',
