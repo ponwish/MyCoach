@@ -122,8 +122,47 @@
       loginWithGoogle();
     }
 
-    async function liffLogin(){ await ensureLiffReady(); if(!liff.isLoggedIn()) liff.login({ redirectUri: location.href }); else await processLiffProfile(); }
-    async function lineEmailLink(){ const email = linkEmail.value.trim(); if(!email) return alert('メールを入力'); await ensureLiffReady(); if(!liff.isLoggedIn()) liff.login({ redirectUri: location.href+'?linkEmail='+encodeURIComponent(email) }); else await processLiffProfile(email); }
+    async function ensureLiffReady() {
+      if (!window.liff) {
+        alert("LIFF SDKが読み込まれていません。ページを再読み込みしてください。");
+        throw new Error("LIFF SDK not loaded");
+      }
+      if (!liff.id || liff.id !== LIFF_ID) {
+        try {
+          await liff.init({ liffId: LIFF_ID });
+        } catch (e) {
+          console.error("LIFF初期化エラー", e);
+          alert("LIFFの初期化に失敗しました。再読み込みしてください。");
+          throw e;
+        }
+      }
+    }
+    async function liffLogin() {
+      try {
+        await ensureLiffReady();
+        if (!liff.isLoggedIn()) {
+          liff.login({ redirectUri: location.href });
+        } else {
+          await processLiffProfile();
+        }
+      } catch (e) {
+        console.error("LIFFログインエラー", e);
+      }
+    }
+    async function lineEmailLink() {
+      const email = linkEmail.value.trim();
+      if (!email) return alert('メールを入力');
+      try {
+        await ensureLiffReady();
+        if (!liff.isLoggedIn()) {
+          liff.login({ redirectUri: location.href + '?linkEmail=' + encodeURIComponent(email) });
+        } else {
+          await processLiffProfile(email);
+        }
+      } catch (e) {
+        console.error("LIFFメールリンクエラー", e);
+      }
+    }
     async function ensureLiffReady(){ if(!window.liff || liff.id !== LIFF_ID) await liff.init({ liffId: LIFF_ID }); }
     async function processLiffProfile(forcedEmail){
       const profile = await liff.getProfile();
