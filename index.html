@@ -196,12 +196,14 @@
 
   /* =========== ログイン完了後 UI 初期化 =========== */
   function finalizeLogin(){
-    document.getElementById('mainHeader').style.display='flex';
+    document.getElementById('mainHeader').style.display = 'flex';
     showSection('home');
+    loadCoachList();      // ✅ coach一覧の読み込み
     loadCurrentGoal();
     loadCoachName();
     loadHistory();
   }
+
 
   /* =========== メール → Supabase ログイン監視 =========== */
   function startPollingSession(){
@@ -239,7 +241,7 @@
   function showSection(s){
     hideAll();
     const map={home:'home-area',chat:'chat-area',coach:'coach-select-area',
-               history:'history-area','goal-edit':'goal-edit-area',goal:'goal-area'};
+              history:'history-area','goal-edit':'goal-edit-area',goal:'goal-area'};
     document.getElementById(map[s]).style.display='block';
     if(s==='chat') initSuggestions();
   }
@@ -391,9 +393,6 @@
 
   /* ---------------- 履歴 ---------------- */
   window.addEventListener('DOMContentLoaded', () => {
-    loadCurrentGoal();
-    loadCoachName();
-    loadHistory();
   });
 
   async function loadCurrentGoal(){
@@ -414,6 +413,7 @@
   }
 
   async function loadHistory(){
+    if (!userId) return; // ← ✅空なら処理中止
     const sel=document.getElementById('historyFilterSelect');
     const coachId=sel.value||'';
     const qs=new URLSearchParams({userId,coachId});
