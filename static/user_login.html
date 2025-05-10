@@ -44,7 +44,7 @@
       </div>
 
       <!-- サインアップ -->
-      <div class="tab-pane fade" id="signupTab">
+      <div class="tab-pane fade" id="signupTab" style="display:block;">
         <div class="mb-3"><input id="upName"  class="form-control" placeholder="お名前 (任意)"></div>
         <div class="mb-3"><input id="upEmail" class="form-control" placeholder="メールアドレス"></div>
         <div class="mb-3"><input id="upPass"  type="password" class="form-control" placeholder="パスワード (6文字以上)"></div>
@@ -164,16 +164,21 @@
       }
     }
     document.addEventListener('DOMContentLoaded', async () => {
-      // ① LINE OAuth から戻って来たか判定
-      const emailParam = new URL(location.href).searchParams.get('linkEmail');
       try {
-        await ensureLiffReady();
-        if (liff.isLoggedIn() && emailParam) {
-          // ② 自動で Signup / Link を完了させる
-          await processLiffProfile(emailParam);
+        userId = localStorage.getItem('userId') || '';
+        if (!userId) {
+          location.replace('/static/user_login.html');
+          return;
         }
-      } catch(e){
-        console.error('LINE callback error', e);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) {
+          location.replace('/static/user_login.html');
+          return;
+        }
+      } catch (e) {
+        console.error('初期化エラー', e);
+        alert('ログイン処理に失敗しました。再読み込みしてください。');
       }
     });
   </script>
