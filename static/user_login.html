@@ -30,9 +30,9 @@
     <div class="tab-content">
       <!-- サインイン -->
       <div class="tab-pane fade show active" id="signinTab">
-        <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="directOAuthGoogle()">
+        <button class="btn btn-outline-secondary w-100 mb-2 oauth-btn" onclick="loginWithGoogle()">
           <img src="https://www.svgrepo.com/show/475656/google-color.svg">Google でサインイン
-        </button>
+        </button>        
         <button class="btn btn-outline-success w-100 mb-3 oauth-btn" onclick="liffLogin()">
           <img src="https://www.svgrepo.com/show/473502/line-line.svg">LINE でサインイン
         </button>
@@ -67,29 +67,51 @@
     </div>
   </div>
 
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const sb = createClient(SUPABASE_URL, "PUBLIC_ANON_KEY");   /* ← anon キー */
-  window.supabase = sb;
-
-  /* Supabase OAuth (Google) コールバック */
-  sb.auth.onAuthStateChange(async (_e, sess) => {
-    if(!sess) return;
-    const email  = localStorage.getItem('pendingEmail') || sess.user.email;
-    try{
-      const r = await fetch('https://mycoach.onrender.com/user/oauth_login',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({authId:sess.user.id,email})
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    const supabase = createClient(SUPABASE_URL, "PUBLIC_ANON_KEY");  // ← anon キーに置換
+  
+    // ✅ Supabase OAuth (Google) のコールバック監視
+    supabase.auth.onAuthStateChange(async (_e, sess) => {
+      if (!sess) return;
+      const email = localStorage.getItem('pendingEmail') || sess.user.email;
+      try {
+        const r = await fetch('https://mycoach.onrender.com/user/oauth_login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ authId: sess.user.id, email })
+        });
+        const j = await r.json();
+        if (r.ok) {
+          localStorage.setItem('userId', j.userId);
+          localStorage.removeItem('pendingEmail');
+          location.href = "/index.html";
+        } else {
+          document.getElementById('linkMsg').textContent = j.error || '失敗';
+        }
+      } catch {
+        document.getElementById('linkMsg').textContent = '通信エラー';
+      }
+    });
+  
+    // ✅ 👇 過去のやり方を踏襲した Google ログイン関数
+    async function loginWithGoogle() {
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: location.href
+        }
       });
-      const j = await r.json();
-      if(r.ok){
-        localStorage.setItem('userId', j.userId);
-        localStorage.removeItem('pendingEmail');
-        location.href = FRONTEND_HOME;
-      }else document.getElementById('linkMsg').textContent = j.error||'失敗';
-    }catch{ document.getElementById('linkMsg').textContent='通信エラー'; }
-  });
-</script>
+    }
+  
+    // ✅ メール連携付きGoogleログイン
+    function googleEmailLink(){
+      const email = linkEmail.value.trim();
+      if (!email) return alert('メールを入力');
+      localStorage.setItem('pendingEmail', email);
+      loginWithGoogle();
+    }
+  </script>
+  
 
 <script>
   const API = 'https://mycoach.onrender.com';
