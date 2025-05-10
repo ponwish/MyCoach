@@ -52,8 +52,8 @@
     @keyframes dots{0%{content:'';}33%{content:'.';}66%{content:'..';}100%{content:'...';}}
   </style>
 </head>
-<body>
 
+<body>
 <!-- ===== ヘッダ ===== -->
 <header id="mainHeader">
   <h1 onclick="navigate('home')">MyCoach</h1>
@@ -152,27 +152,30 @@
 
   /* =========== 初期ログイン判定 =========== */
   document.addEventListener('DOMContentLoaded', async () => {
-    try{
-      /* --- ① Supabase セッション確認 --- */
-      const { data:{session} } = await supabase.auth.getSession();
-      if(session?.user){
+    try {
+      // --- ① Supabase セッション確認 ---
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
         userId = session.user.id;
+        localStorage.setItem('userId', userId);  // ✅ 忘れず保存
         finalizeLogin();
         return;
       }
 
-      /* --- ② LINE LIFF チェック --- */
+      // --- ② LINE LIFF チェック ---
       await liff.init({ liffId: LIFF_ID });
-      if(liff.isLoggedIn()){
+      if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
         lineId = profile.userId;
-        /* サーバへ登録 & userId 取得 */
-        const r = await fetch(`${API_BASE_URL}/user/liff_login`,{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ lineId })
+
+        const r = await fetch(`${API_BASE_URL}/user/liff_login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lineId })
         });
         const j = await r.json();
-        if(r.ok){
+        if (r.ok) {
           userId = j.userId;
           localStorage.setItem('lineId', lineId);
           localStorage.setItem('userId', userId);
@@ -181,14 +184,15 @@
         }
       }
 
-      /* --- ③ 未ログイン：ログイン選択へ遷移 --- */
-      location.replace(LOGIN_PAGE);
+      // --- ③ 両方失敗：ログイン画面へ遷移 ---
+      location.replace('/static/user_login.html');
 
-    }catch(e){
-      console.error('初期化エラー',e);
+    } catch (e) {
+      console.error('初期化エラー', e);
       alert('ログイン処理に失敗しました。再読み込みしてください。');
     }
   });
+
 
   /* =========== ログイン完了後 UI 初期化 =========== */
   function finalizeLogin(){
