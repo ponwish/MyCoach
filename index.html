@@ -174,8 +174,10 @@
           localStorage.removeItem('pendingEmail');
           location.href = FRONTEND_HOME;
         } else {
-          document.getElementById('linkMsg').textContent = data.error || 'このGoogleアカウントは未連携です';
           await supabase.auth.signOut();
+          localStorage.removeItem('userId');
+          localStorage.removeItem('pendingEmail');
+          location.replace('/static/user_login.html');  // ✅ ログイン画面へ戻す
         }
       } catch {
         document.getElementById('linkMsg').textContent = '通信エラーが発生しました';
