@@ -315,7 +315,7 @@
       } catch (err) {
         console.warn('LIFF access token revoked. Forcing logout and re-login.');
         await liff.logout();
-        liff.login({ redirectUri: location.href });
+        liff.login({ redirectTo: location.origin + '/index.html' });
       }
     }
 
