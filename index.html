@@ -244,10 +244,15 @@
 
   /* ---------------- ログアウト ---------------- */
   function logout(){
-    localStorage.removeItem('userId');
-    supabase.auth.signOut().catch(()=>{});
-    location.replace(LOGIN_PAGE);
-  }
+  if (!confirm('本当にログアウトしますか？')) return;
+  localStorage.removeItem('userId');
+  localStorage.removeItem('lineId');
+  localStorage.removeItem('supabase-login-success');
+
+  supabase.auth.signOut().catch(()=>{});
+  location.replace('/static/user_login.html');
+}
+
 
   /* ---------------- 目標設定／変更 ---------------- */
   function submitGoal(){
