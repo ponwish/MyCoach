@@ -671,9 +671,9 @@ def liff_link():
         app.logger.error(f"[liff_link] {e}")
         return jsonify({'error': 'liff link failed'}), 500
     
-    @app.route("/")
-    def home():
-        return "Hello from Railway!"
+@app.route("/")
+def home():
+    return "Hello from Railway!"
     
 if __name__ == '__main__':
     # ログにタイムスタンプを出すとデバッグしやすい
