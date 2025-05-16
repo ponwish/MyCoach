@@ -153,14 +153,20 @@
   supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!session?.user) return;
 
-      const sessionEmail = session.user.email?.toLowerCase() || '';
-      const pendingEmail = (localStorage.getItem('pendingEmail') || '').toLowerCase();
+    const sessionEmail = session.user.email?.toLowerCase() || '';
+    const pendingEmail = localStorage.getItem('pendingEmail');
 
-      if (pendingEmail && pendingEmail !== sessionEmail) {
+    // ✅ メール連携フローの場合だけ email を照合
+    if (pendingEmail !== null) {
+      if (pendingEmail.toLowerCase() !== sessionEmail) {
         alert("Google アカウントと入力したメールが一致しません");
         await supabase.auth.signOut();
         return;
       }
+      // ✔ 一致 or 照合OKなら削除して後続処理へ
+      localStorage.removeItem('pendingEmail');
+    }
+
 
       try {
         const res = await fetch(`${API_BASE_URL}/user/oauth_login`, {
