@@ -670,7 +670,11 @@ def liff_link():
     except Exception as e:
         app.logger.error(f"[liff_link] {e}")
         return jsonify({'error': 'liff link failed'}), 500
-
+    
+    @app.route("/")
+    def home():
+        return "Hello from Railway!"
+    
 if __name__ == '__main__':
     # ログにタイムスタンプを出すとデバッグしやすい
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')

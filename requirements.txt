@@ -3,3 +3,4 @@
  openai
  requests
  supabase
+ gunicorn
