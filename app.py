@@ -673,7 +673,7 @@ def liff_link():
     
 @app.route("/")
 def home():
-    return redirect("https://imaginative-meerkat-5675d3.netlify.app/user_login.html", code=302)
+    return redirect("https://imaginative-meerkat-5675d3.netlify.app/static/user_login.html", code=302)
     
 if __name__ == '__main__':
     # ログにタイムスタンプを出すとデバッグしやすい
