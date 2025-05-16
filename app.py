@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, redirect
 from flask_cors import CORS
 from openai import OpenAI
 from supabase import create_client
@@ -673,7 +673,7 @@ def liff_link():
     
 @app.route("/")
 def home():
-    return "Hello from Railway!"
+    return redirect("https://imaginative-meerkat-5675d3.netlify.app/user_login.html", code=302)
     
 if __name__ == '__main__':
     # ログにタイムスタンプを出すとデバッグしやすい
