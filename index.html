@@ -338,6 +338,22 @@
     .hist-msg.assistant .hist-bubble{
       max-width: calc(100% - 2.5rem);   /* 2.5rem ≒ 40px ≒ 全角3文字弱 */
     }
+
+    /* ① ─ 縦積みコンテナを flex 化  */
+    .hist-msg > div{
+      display:flex;
+      flex-direction:column;   /* バブル / 時刻 を上下に並べる */
+    }
+
+    /* ② ─ assistant 側だけ右寄せ  */
+    .hist-msg.assistant > div{
+      align-items:flex-end;    /* ← ここで右端に揃う */
+    }
+
+    /* ③ ─ user 側は左寄せキープ（任意・安全策） */
+    .hist-msg.user > div{
+      align-items:flex-start;
+    }
   </style>
 </head>
 
