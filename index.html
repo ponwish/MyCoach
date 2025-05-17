@@ -339,21 +339,29 @@
       max-width: calc(100% - 2.5rem);   /* 2.5rem ≒ 40px ≒ 全角3文字弱 */
     }
 
-    /* ① ─ 縦積みコンテナを flex 化  */
+    /* ❶ バブル＋時刻を縦に積むコンテナ化（変更なし） */
     .hist-msg > div{
       display:flex;
-      flex-direction:column;   /* バブル / 時刻 を上下に並べる */
+      flex-direction:column;    /* バブル / 時刻 を上下に並べる */
     }
 
-    /* ② ─ assistant 側だけ右寄せ  */
+    /* ❷ assistant 側は “左寄せ” のまま */
     .hist-msg.assistant > div{
-      align-items:flex-end;    /* ← ここで右端に揃う */
+      align-items:flex-start;   /* ← バブルは左端キープ */
     }
 
-    /* ③ ─ user 側は左寄せキープ（任意・安全策） */
+    /* ❸ user 側（参考：右寄せにしてある場合） */
     .hist-msg.user > div{
-      align-items:flex-start;
+      align-items:flex-end;
     }
+
+    /* ❹ ここが今回のキー！  
+          時刻だけ右下に寄る（親は flex-start でも OK） */
+    .hist-msg.assistant .hist-time{
+      align-self:flex-end;      /* 自分だけ右端へ */
+      text-align:right;
+    }
+
   </style>
 </head>
 
