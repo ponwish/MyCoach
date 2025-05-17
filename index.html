@@ -413,25 +413,36 @@
   });
 
   /* ---------------- ナビゲーション ---------------- */
-  function hideAll(){
-    ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area','link-area']
-      .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-      document.getElementById('hero').classList.add('hidden');
-      document.getElementById('card-stack').classList.add('hidden'); 
+function hideAll() {
+  const ids = [
+    'hero', 'card-stack', 'home-area', 'chat-area', 'goal-area',
+    'goal-edit-area', 'coach-select-area', 'history-area', 'link-area'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+function showSection(s) {
+  hideAll();
+  if (s === 'home') {
+    document.getElementById('hero').style.display = 'block';
+    document.getElementById('card-stack').style.display = 'block';
+    return;  // ✅ 以降の処理をスキップ
   }
-  function showSection(s){
-    hideAll();
-    if(name==='home'){
-      document.getElementById('hero').classList.remove('hidden');
-      document.getElementById('card-stack').classList.remove('hidden');
-    }
-    const map={home:'home-area',chat:'chat-area',coach:'coach-select-area',
-              history:'history-area','goal-edit':'goal-edit-area',goal:'goal-area',link:'link-area'};
-    document.getElementById(map[s]).style.display='block';
-    if(s==='chat') initSuggestions();
-  }
-  function navigate(s){document.getElementById('menu').style.display='none';showSection(s);}
-  showSection('home');
+  const map = {
+    chat: 'chat-area',
+    coach: 'coach-select-area',
+    history: 'history-area',
+    'goal-edit': 'goal-edit-area',
+    goal: 'goal-area',
+    link: 'link-area'
+  };
+  const el = document.getElementById(map[s]);
+  if (el) el.style.display = 'block';
+  if (s === 'chat') initSuggestions();
+}
 
   /* ---------------- ログアウト ---------------- */
   function logout(){
