@@ -630,19 +630,22 @@ def liff_login():
 # ---------------- LINE LIFF: email link ----------------
 @app.route('/user/liff_link', methods=['POST'])
 def liff_link():
-    """
-    LINE ID とメールを受け取り、app_users を 1 行に集約する。
-    既存行があれば UPDATE、無ければ INSERT。
-    """
     data = request.json or {}
     line_id = data.get('lineId')
-    email   = (data.get('email') or '').strip().lower()
+    user_id = data.get('userId')
 
-    if not line_id or not email:
-        return jsonify({'error': 'lineId & email required'}), 400
+    if not line_id or not user_id:
+        return jsonify({'error': 'lineId & userId required'}), 400
 
     try:
-        # ① email または line_id が一致する行を検索
+        # userId から email を取得
+        row = supabase_admin.table('app_users').select('email').eq('id', user_id).single().execute()
+        if not row.data or not row.data['email']:
+            return jsonify({'error': 'email not found for this user'}), 404
+
+        email = row.data['email'].lower()
+
+        # email or line_id が一致するレコードに line_id を紐づけ
         q = (supabase_admin
              .table('app_users')
              .select('id')
@@ -651,16 +654,14 @@ def liff_link():
              .execute())
 
         if q.data:
-            # ② 既存レコードを上書き
             user_id = q.data[0]['id']
             supabase_admin.table('app_users').update({
-                'email':   email,
+                'email': email,
                 'line_id': line_id
             }).eq('id', user_id).execute()
         else:
-            # ③ 新規 INSERT
             ins = supabase_admin.table('app_users').insert({
-                'email':   email,
+                'email': email,
                 'line_id': line_id
             }).execute()
             user_id = ins.data[0]['id']
@@ -669,7 +670,8 @@ def liff_link():
 
     except Exception as e:
         app.logger.error(f"[liff_link] {e}")
-        return jsonify({'error': 'liff link failed'}), 500
+        return jsonify({'error': 'link failed'}), 500
+
     
 @app.route("/")
 def home():

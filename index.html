@@ -86,7 +86,6 @@
   <!-- アカウント連携 -->
   <div id="link-area" class="card" style="display:none;">
     <h4 class="mb-3">アカウント連携</h4>
-    <input id="linkEmail" class="form-control mb-2" placeholder="メールアドレスを入力" />
     <button class="btn btn-outline-secondary w-100 mb-2" onclick="googleEmailLink()">
       <img src="https://www.svgrepo.com/show/475656/google-color.svg" style="height:20px; margin-right:6px;">Google と連携
     </button>
@@ -287,17 +286,28 @@
     }
 
     async function lineEmailLink() {
-      const email = linkEmail.value.trim();
-      if (!email) return alert('メールを入力');
       try {
         await ensureLiffReady();
         if (!liff.isLoggedIn()) {
-          liff.login({ redirectUri: location.href + '?linkEmail=' + encodeURIComponent(email) });
+          liff.login({ redirectUri: location.href });
         } else {
-          await processLiffProfile(email);
+          const profile = await liff.getProfile();
+          const lineId = profile.userId;
+          const userId = localStorage.getItem('userId');
+          const r = await fetch(`${API_BASE_URL}/user/liff_link`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lineId, userId })
+          });
+          const j = await r.json();
+          if (r.ok) {
+            alert('LINEと連携しました！');
+          } else {
+            alert(j.error || '連携失敗');
+          }
         }
       } catch (e) {
-        console.error("LIFFメールリンクエラー", e);
+        console.error("LIFFエラー", e);
       }
     }
 
