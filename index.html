@@ -87,9 +87,9 @@
   <div id="link-area" class="card" style="display:none;">
     <h4 class="mb-3">アカウント連携</h4>
     <div id="accountStatus" class="mb-3 text-muted small"></div>
-    <button class="btn btn-outline-secondary w-100 mb-2" onclick="googleEmailLink()">
+    <!-- <button class="btn btn-outline-secondary w-100 mb-2" onclick="googleEmailLink()">
       <img src="https://www.svgrepo.com/show/475656/google-color.svg" style="height:20px; margin-right:6px;">Google と連携
-    </button>
+    </button> -->
     <button class="btn btn-outline-success w-100" onclick="lineEmailLink()">
       <img src="https://www.svgrepo.com/show/473502/line-line.svg" style="height:20px; margin-right:6px;">LINE と連携
     </button>
@@ -317,9 +317,9 @@
       const res = await fetch(`${API_BASE_URL}/user/account_status?userId=${userId}`);
       const data = await res.json();
 
-      const googleStatus = data.email
-        ? `✅ Google：連携済み（${data.email}）`
-        : '❌ Google：未連携';
+      // const googleStatus = data.email
+      //   ? `✅ Google：連携済み（${data.email}）`
+      //   : '❌ Google：未連携';
 
       let lineStatus = '❌ LINE：未連携';
       if (data.lineId) {
