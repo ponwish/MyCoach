@@ -86,6 +86,7 @@
   <!-- アカウント連携 -->
   <div id="link-area" class="card" style="display:none;">
     <h4 class="mb-3">アカウント連携</h4>
+    <div id="accountStatus" class="mb-3 text-muted small"></div>
     <button class="btn btn-outline-secondary w-100 mb-2" onclick="googleEmailLink()">
       <img src="https://www.svgrepo.com/show/475656/google-color.svg" style="height:20px; margin-right:6px;">Google と連携
     </button>
@@ -276,6 +277,7 @@
     loadCurrentGoal();
     loadCoachName();
     loadHistory();
+    loadAccountStatus(); // ← ここを追加
   }
 
   function googleEmailLink(){
@@ -309,6 +311,31 @@
       } catch (e) {
         console.error("LIFFエラー", e);
       }
+    }
+
+    async function loadAccountStatus() {
+      const res = await fetch(`${API_BASE_URL}/user/account_status?userId=${userId}`);
+      const data = await res.json();
+
+      const googleStatus = data.email
+        ? `✅ Google：連携済み（${data.email}）`
+        : '❌ Google：未連携';
+
+      let lineStatus = '❌ LINE：未連携';
+      if (data.lineId) {
+        try {
+          await ensureLiffReady();
+          const profile = await liff.getProfile();
+          lineStatus = `✅ LINE：連携済み（${profile.displayName}）`;
+        } catch {
+          lineStatus = '✅ LINE：連携済み';
+        }
+      }
+
+      document.getElementById('accountStatus').innerHTML = `
+        <div class="mb-2">${googleStatus}</div>
+        <div class="mb-2">${lineStatus}</div>
+      `;
     }
 
     async function ensureLiffReady(){ if(!window.liff || liff.id !== LIFF_ID) await liff.init({ liffId: LIFF_ID }); }
