@@ -269,6 +269,50 @@
     .coach-status{font-size:.8rem; font-weight:600}
     .coach-status.on {color:#2e7d32}
     .coach-status.off{color:#d32f2f}
+
+    /* === History Timeline =================================== */
+    #history-area .history-scroll{
+      max-height:min(72vh,580px);
+      overflow-y:auto; padding:4px 2px;
+      scroll-behavior:smooth;
+    }
+
+    /* ---- 日付セパレーター ---- */
+    .date-sep{
+      position:sticky; top:0;
+      margin:12px 0; padding:6px 12px;
+      font-size:.8rem; font-weight:600; letter-spacing:.3px;
+      color:#fff;
+      background:var(--c-accent3);
+      border-radius:14px;
+      box-shadow:var(--sh-1);
+      z-index:5;
+    }
+
+    /* ---- 1 つのメッセージ ---- */
+    .hist-msg{
+      display:flex; gap:10px; margin:12px 0;
+      align-items:flex-start;
+    }
+    .hist-msg.user{ justify-content:flex-end; }
+    .hist-avatar{
+      flex:0 0 32px; height:32px; border-radius:50%;
+      object-fit:cover; box-shadow:var(--sh-in);
+    }
+    .hist-bubble{
+      max-width:70%; padding:12px 16px;
+      border-radius:18px; box-shadow:var(--sh-1);
+      background:#fff; word-break:break-word;
+      font-size:.92rem; line-height:1.55;
+    }
+    .hist-msg.user .hist-bubble{
+      background:var(--c-accent2);
+    }
+    .hist-time{
+      font-size:.7rem; color:var(--c-txt-sec);
+      margin-top:4px; text-align:right;
+    }
+
   </style>
 </head>
 
@@ -381,11 +425,16 @@
   <!-- 履歴 -->
   <div id="history-area" class="card" style="display:none;">
     <h4 class="text-center mb-3">チャット履歴</h4>
+
+    <!--─ コーチフィルタ ─-->
     <select id="historyFilterSelect" class="form-select mb-3">
-      <option value="">―― 全コーチ ――</option>
+      <option value="">―― 全コーチ ――</option>
     </select>
-    <div id="historyList" class="chat-history-container"></div>
+
+    <!--─ タイムライン本体 ─-->
+    <div id="historyScroll" class="history-scroll"></div>
   </div>
+
 </main>
 
 <!-- ===== Supabase JS 読み込み ===== -->
@@ -846,24 +895,40 @@ document.getElementById('coachConfirmBtn').onclick = async ()=>{
   }
 
   async function loadHistory(){
-    if (!userId) return; // ← ✅空なら処理中止
-    const sel=document.getElementById('historyFilterSelect');
-    const coachId=sel.value||'';
-    const qs=new URLSearchParams({userId,coachId});
-    const r=await fetch(`${API_BASE_URL}/user/history?${qs}`);
-    const list=await r.json();
-    const div=document.getElementById('historyList');
-    div.innerHTML='';
-    list.forEach(m=>{
-      div.insertAdjacentHTML('beforeend',`
-        <div class="chat-message ${(m.role==='user')?'user':'assistant'}">
-          ${m.role==='assistant'?'<img src="/Resource/image/Coach_icon/coach_icon_1.png" class="chat-icon">':''}
-          <div class="chat-bubble-container">
-            <div class="chat-bubble">${escapeHtml(m.content)}</div>
-            <div class="chat-timestamp">${new Date(m.created_at).toLocaleString()}</div>
+    if(!userId) return;
+
+    const coachId = document.getElementById('historyFilterSelect').value || '';
+    const qs      = new URLSearchParams({userId,coachId});
+    const res     = await fetch(`${API_BASE_URL}/user/history?${qs}`);
+    const rows    = await res.json();
+
+    const box = document.getElementById('historyScroll');
+    box.innerHTML = '';
+
+    let currentDate = '';
+    rows.forEach(r=>{
+      const d = new Date(r.created_at);
+      const dateStr = d.toLocaleDateString('ja-JP',{year:'numeric',month:'short',day:'numeric',weekday:'short'});
+      if(dateStr !== currentDate){
+        currentDate = dateStr;
+        box.insertAdjacentHTML('beforeend',`<div class="date-sep">${currentDate}</div>`);
+      }
+
+      const timeStr = d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+      const isUser  = r.role === 'user';
+      const bubble  = `
+        <div class="hist-msg ${isUser?'user':'assistant'}">
+          ${isUser?'':`<img src="/Resource/image/Coach_icon/coach_icon_1.png" class="hist-avatar">`}
+          <div>
+            <div class="hist-bubble">${escapeHtml(r.content)}</div>
+            <div class="hist-time">${timeStr}</div>
           </div>
-        </div>`);
+        </div>`;
+      box.insertAdjacentHTML('beforeend',bubble);
     });
+
+    // 一番下まで自動スクロール（任意）
+    box.scrollTop = box.scrollHeight;
   }
   document.getElementById('historyFilterSelect').addEventListener('change',loadHistory);
 </script>
