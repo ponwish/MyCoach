@@ -338,6 +338,10 @@
     .hist-msg.assistant .hist-bubble{
       max-width: calc(100% - 2.5rem);   /* 2.5rem ≒ 40px ≒ 全角3文字弱 */
     }
+    /* ===== assistant row – avatar とバブルの間隔を詰める ===== */
+    .hist-msg.assistant{
+      gap:6px;         /* 10px → 6px：全角 1 文字弱まで縮める */
+    }
 
     /* ❶ バブル＋時刻を縦に積むコンテナ化（変更なし） */
     .hist-msg > div{
@@ -348,6 +352,7 @@
     /* ❷ assistant 側は “左寄せ” のまま */
     .hist-msg.assistant > div{
       align-items:flex-start;   /* ← バブルは左端キープ */
+      margin-left:0;
     }
 
     /* ❸ user 側（参考：右寄せにしてある場合） */
