@@ -299,9 +299,7 @@
       const res = await fetch(`${API_BASE_URL}/user/account_status?userId=${userId}`);
       const data = await res.json();
 
-      // const googleStatus = data.email
-      //   ? `✅ Google：連携済み（${data.email}）`
-      //   : '❌ Google：未連携';
+      const googleStatus = '';
 
       let lineStatus = '❌ LINE：未連携';
       if (data.lineId) {
