@@ -178,6 +178,47 @@
 
     /* ========= 7. 汎用ユーティリティ ========= */
     .hidden{display:none!important}
+    /* ========= 8. チャット – 目標 & コーチ インフォカード ========= */
+    #userProfileInfo{
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-radius: 22px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      background: var(--c-card-gl);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--c-card-br);
+      box-shadow: var(--sh-1);
+      font-size: .95rem;
+    }
+
+    /* 左のアイコン（絵文字）を円形バッジに見せる */
+    #userProfileInfo strong{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px; height: 30px;
+      margin-right: 8px;
+      border-radius: 50%;
+      font-size: 1rem;
+      background: var(--c-accent3);
+      color: #fff;
+      box-shadow: var(--sh-in);
+    }
+
+    /* テキスト部分を自然改行させつつ色味を薄めに */
+    #userProfileInfo span{
+      color: var(--c-txt-sec);
+      word-break: break-word;
+    }
+
+    /* 1 行を flex で横並びに */
+    #userProfileInfo div{
+      display: flex;
+      align-items: center;
+    }
+
   </style>
 </head>
 
@@ -258,12 +299,12 @@
   <div id="chat-area" class="card" style="display:none;">
     <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
       <div><strong>🎯 目標：</strong><span id="userGoalText">読み込み中...</span></div>
-      <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText">読み込み中...</span></div>
+      <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText" style="font-weight:600;">読み込み中...</span></div>
     </div>
     <div id="suggestions"></div>
     <div id="chat" class="chat-container"></div>
     <div class="input-group mt-3">
-      <textarea id="talkInput" class="form-control" rows="2" placeholder="悩みや質問を入力してください（Shift+Enterで改行）"></textarea>
+      <textarea id="talkInput" class="form-control" rows="2" placeholder="悩みや質問を入力してください"></textarea>
       <button id="sendButton" onclick="sendTalk()">
       <!-- simple plane icon (stroke inherits currentColor) -->
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -652,7 +693,7 @@
   function initSuggestions(){
     if(suggestionsShown) return;
     const sugDiv = document.getElementById('suggestions');
-    ['今週の達成目標を決めたい','モチベーションが落ちています','学習スケジュールの最適化']
+    ['モチベーションが落ちています']
       .forEach(text=>{
         const b=document.createElement('button');
         b.className='btn btn-light'; b.textContent=text;
