@@ -155,13 +155,26 @@ def get_latest_goal():
         app.logger.error(f"Goal fetch error: {e}")
         return jsonify({}), 500
 
-@app.route('/coaches', methods=['GET', 'OPTIONS'])
+@app.route('/coaches', methods=['GET'])
 def list_coaches():
     try:
-        resp = supabase.table('profiles').select('id,code_id,name,availability_status').execute()
-        return jsonify(resp.data), 200
-    except APIError as e:
-        app.logger.error(f"List coaches error: {e}")
+        resp = supabase.table('profiles') \
+            .select('id, code_id, name, availability_status') \
+            .order('created_at') \
+            .execute()
+
+        records = resp.data
+        # ✅ code_id が重複しないようにフィルタ
+        seen = set()
+        unique = []
+        for r in records:
+            if r['code_id'] not in seen:
+                seen.add(r['code_id'])
+                unique.append(r)
+
+        return jsonify(unique), 200
+    except Exception as e:
+        app.logger.error(f"[list_coaches] error: {e}")
         return jsonify([]), 500
 
 @app.route('/user/coach', methods=['GET', 'OPTIONS'])
