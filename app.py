@@ -672,6 +672,21 @@ def liff_link():
         app.logger.error(f"[liff_link] {e}")
         return jsonify({'error': 'link failed'}), 500
 
+@app.route('/user/account_status', methods=['GET'])
+def account_status():
+    user_id = request.args.get('userId')
+    if not user_id:
+        return jsonify({'error': 'userId required'}), 400
+
+    try:
+        row = supabase_admin.table('app_users').select('email', 'line_id').eq('id', user_id).single().execute()
+        return jsonify({
+            'email': row.data.get('email'),
+            'lineId': row.data.get('line_id')
+        })
+    except Exception as e:
+        app.logger.error(f"[account_status] {e}")
+        return jsonify({'error': 'fetch failed'}), 500
     
 @app.route("/")
 def home():
