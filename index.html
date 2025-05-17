@@ -270,51 +270,78 @@
     .coach-status.on {color:#2e7d32}
     .coach-status.off{color:#d32f2f}
 
-    /* === History Timeline =================================== */
-    #history-area .history-scroll{
-      max-height:min(72vh,580px);
-      overflow-y:auto; padding:4px 2px;
-      scroll-behavior:smooth;
-    }
+  /* ========= History timeline (= 履歴) ========================== */
 
-    /* ---- 日付セパレーター ---- */
-    .date-sep{
-      position:sticky; top:0;
-      margin:12px 0; padding:6px 12px;
-      font-size:.8rem; font-weight:600; letter-spacing:.3px;
-      color:#fff;
-      background:var(--c-accent3);
-      border-radius:14px;
-      box-shadow:var(--sh-1);
-      z-index:5;
-    }
+  /* ── ラッパー ───────────────────────────── */
+  #history-area .history-scroll{
+    max-height:min(72vh,580px);
+    overflow-y:auto;
+    padding:4px 2px;
+    scroll-behavior:smooth;
+  }
 
-    /* ---- 1 つのメッセージ ---- */
-    .hist-msg{
-      display:flex; gap:10px; margin:12px 0;
-      align-items:flex-start;
-    }
-    .hist-msg.user { flex-direction: row-reverse; } 
-    .hist-msg.user .hist-bubble { margin-left: 0; }   /* gap が逆向きになるためリセット */
-    .hist-msg.user .hist-time   { text-align: left; } /* 時刻も自然に左寄せ */
-    .hist-avatar{
-      flex:0 0 32px; height:32px; border-radius:50%;
-      object-fit:cover; box-shadow:var(--sh-in);
-    }
-    .hist-bubble{
-      max-width:70%; padding:12px 16px;
-      border-radius:18px; box-shadow:var(--sh-1);
-      background:#fff; word-break:break-word;
-      font-size:.92rem; line-height:1.55;
-    }
-    .hist-msg.user .hist-bubble{
-      background:var(--c-accent2);
-    }
-    .hist-time{
-      font-size:.7rem; color:var(--c-txt-sec);
-      margin-top:4px; text-align:right;
-    }
+  /* ── 日付セパレーター ───────────────────── */
+  .date-sep{
+    position:sticky; top:0;
+    margin:12px 0; padding:6px 12px;
+    font-size:.8rem; font-weight:600; letter-spacing:.3px;
+    color:#fff;
+    background:var(--c-accent3);
+    border-radius:14px;
+    box-shadow:var(--sh-1);
+    z-index:5;
+  }
 
+  /* ── メッセージ行 ─────────────────────── */
+  .hist-msg{
+    display:flex; gap:10px;
+    margin:12px 0;
+    align-items:flex-start;
+    max-width:100%;
+  }
+
+  /* ≫ ユーザ側（右） */
+  .hist-msg.user{ margin-left:auto; }            /* ★右寄せの決め手 */
+
+  .hist-msg.user .hist-bubble{
+    background:#ffe1e7;                          /* 視認性を上げた色 */
+    color:#333;
+    margin-left:0; margin-right:0;               /* 無駄な余白を消す */
+  }
+
+  .hist-msg.user .hist-time{ text-align:right; }
+
+  /* ≫ コーチ側（左） */
+  .hist-msg.assistant{ margin-right:auto; }
+
+  .hist-msg.assistant .hist-bubble{ background:#fff; }
+  .hist-msg.assistant .hist-time  { text-align:left; }
+
+  /* ── バブル本体共通 ───────────────────── */
+  .hist-bubble{
+    padding:12px 16px;
+    border-radius:18px;
+    box-shadow:var(--sh-1);
+    line-height:1.55;
+    word-break:break-word;
+    max-width:85%;                               /* 枠から適度な余白 */
+  }
+
+  /* ── タイムスタンプ ──────────────────── */
+  .hist-time{
+    font-size:.75rem;
+    color:var(--c-txt-sec);
+    margin-top:4px;
+  }
+
+  /* ── アバター ───────────────────────── */
+  .hist-avatar{
+    flex:0 0 32px;
+    width:32px; height:32px;
+    border-radius:50%;
+    object-fit:cover;
+    box-shadow:var(--sh-in);
+  }
   </style>
 </head>
 
