@@ -10,6 +10,7 @@
   <style>
     /* ========= 0. カラーパレット ========= */
     :root{
+      --header-h : 64px; 
       --c-bg-grad : linear-gradient(135deg,#ffecd2 0%,#fcb69f 100%);
       --c-card-gl : rgba(255,255,255,.55);
       --c-card-br : rgba(255,255,255,.85);
@@ -24,9 +25,14 @@
     /* ========= 1. ベース ========= */
     html,body{height:100%;margin:0}
     body{
+      padding-top: var(--header-h);
       background:var(--c-bg-grad);background-attachment:fixed;
       color:var(--c-txt-prim);-webkit-font-smoothing:antialiased;
       overflow-x:hidden;
+      position:fixed;
+      inset:0 0 auto 0;
+      height:var(--header-h);
+      z-index:1000;
     }
 
     /* ========= 2. ヘッダ ========= */
@@ -38,9 +44,10 @@
     header h1{margin:0;font-size:1.4rem;font-weight:600;cursor:pointer}
     #hamburger{font-size:1.8rem;background:none;border:none;cursor:pointer}
     #menu{
-      position:absolute;top:64px;right:24px;min-width:160px;display:none;
+      position:absolute;top:var(--header-h);right:24px;min-width:160px;display:none;
       background:var(--c-card-gl);backdrop-filter:blur(12px);
       border:1px solid var(--c-card-br);border-radius:16px;box-shadow:var(--sh-1);
+      z-index:2000;          /* ← 追加 */
     }
     #menu ul{margin:0;padding:8px 0;list-style:none}
     #menu li{
@@ -298,8 +305,8 @@
   <!-- チャット -->
   <div id="chat-area" class="card" style="display:none;">
     <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
-      <div><strong>🎯 目標：</strong><span id="userGoalText">読み込み中...</span></div>
-      <div><strong>👨‍🏫 コーチ：</strong><span id="coachNameText" style="font-weight:600;">読み込み中...</span></div>
+      <div><strong>🎯</strong><span id="userGoalText">読み込み中...</span></div>
+      <div><strong>👨‍🏫</strong><span id="coachNameText" style="font-weight:600;">読み込み中...</span></div>
     </div>
     <div id="suggestions"></div>
     <div id="chat" class="chat-container"></div>
