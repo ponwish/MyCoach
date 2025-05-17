@@ -331,8 +331,9 @@
 
     /* ▼ 追加 –– 既存の .hist-time の後に書けば OK */
     .hist-msg.assistant .hist-time{
-      text-align:right;   /* 右寄せ */
-      margin-left:auto;   /* 親（縦積みコンテナ）の右端へ押し出す */
+      margin-left:0;        /* auto → 0 で拡張を防止 */
+      text-align:right;     /* 文字自体は右寄せのまま */
+      max-width:100%;       /* 念のため */
     }
 
     .hist-msg.assistant .hist-bubble{
@@ -353,6 +354,9 @@
     .hist-msg.assistant > div{
       align-items:flex-start;   /* ← バブルは左端キープ */
       margin-left:0;
+      display:inline-flex;             /* インライン化して自然に横幅に沿わせる */
+      flex-direction:column;           /* 縦にバブル→時刻の順で積む */
+      align-items:flex-end;            /* 右端（＝バブルの右端）にそろえる */
     }
 
     /* ❸ user 側（参考：右寄せにしてある場合） */
