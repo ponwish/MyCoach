@@ -679,14 +679,30 @@ def account_status():
         return jsonify({'error': 'userId required'}), 400
 
     try:
-        row = supabase_admin.table('app_users').select('email', 'line_id').eq('id', user_id).single().execute()
+        # app_users から email, line_id, auth_id を取得
+        row = supabase_admin.table('app_users').select('email', 'line_id', 'auth_id').eq('id', user_id).single().execute()
+        email    = row.data.get('email')
+        line_id  = row.data.get('line_id')
+        auth_id  = row.data.get('auth_id')
+        google_email = None
+
+        # auth_id があれば auth.users から email を取得（Googleアカウントの実メール）
+        if auth_id:
+            try:
+                auth_row = supabase_admin.table('users', schema='auth').select('email').eq('id', auth_id).single().execute()
+                google_email = auth_row.data.get('email')
+            except Exception as e:
+                app.logger.warning(f"[account_status] failed to fetch auth.users: {e}")
+
         return jsonify({
-            'email': row.data.get('email'),
-            'lineId': row.data.get('line_id')
-        })
+            'email': google_email or email,
+            'lineId': line_id
+        }), 200
+
     except Exception as e:
         app.logger.error(f"[account_status] {e}")
         return jsonify({'error': 'fetch failed'}), 500
+
     
 @app.route("/")
 def home():
