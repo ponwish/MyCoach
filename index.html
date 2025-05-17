@@ -331,9 +331,12 @@
 
     /* ▼ 追加 –– 既存の .hist-time の後に書けば OK */
     .hist-msg.assistant .hist-time{
-      margin-left:0;        /* auto → 0 で拡張を防止 */
-      text-align:right;     /* 文字自体は右寄せのまま */
-      max-width:100%;       /* 念のため */
+      align-self:flex-end;   /* ラッパー内で右寄せ                */
+      width:100%;            /* バブルと同じ横幅を占有させる       */
+      text-align:right;      /* 文字を右端に揃える                */
+      margin-top:4px;
+      font-size:.7rem;
+      color:var(--c-txt-sec);
     }
 
     .hist-msg.assistant .hist-bubble{
@@ -352,10 +355,9 @@
 
     /* ❷ assistant 側は “左寄せ” のまま */
     .hist-msg.assistant > div{
-      align-items:flex-start;   /* ← バブルは左端キープ */
-      margin-left:0;
-      display:inline-flex;             /* インライン化して自然に横幅に沿わせる */
-      flex-direction:column;           /* 縦にバブル→時刻の順で積む */
+      display:flex;            /* ← inline-flex にしない           */
+      flex-direction:column;   /* バブル → 時刻 を縦に並べる        */
+      align-items:flex-start;  /* 左端を基準に（＝バブルを左揃え） */
     }
 
     /* ❸ user 側（参考：右寄せにしてある場合） */
@@ -364,7 +366,7 @@
     }
 
     /* ❹ ここが今回のキー！  
-          時刻だけ右下に寄る（親は flex-start でも OK） */
+      時刻だけ右下に寄る（親は flex-start でも OK） */
     .hist-msg.assistant .hist-time{
       align-self:flex-end;      /* 自分だけ右端へ */
       text-align:right;
