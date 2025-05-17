@@ -299,7 +299,7 @@
       background:var(--c-accent2);
       margin-left:0; 
     }
-    .hist-msg.user .hist-time   { text-align: right; } /* 時刻も自然に左寄せ */
+    .hist-msg.user .hist-time   { text-align: left; } /* 時刻も自然に左寄せ */
     .hist-avatar{
       flex:0 0 32px; height:32px; border-radius:50%;
       object-fit:cover; box-shadow:var(--sh-in);
@@ -315,7 +315,7 @@
     }
     .hist-time{
       font-size:.7rem; color:var(--c-txt-sec);
-      margin-top:4px; text-align:left;
+      margin-top:4px; text-align:right;
     }
 
   </style>
@@ -933,8 +933,8 @@ document.getElementById('coachConfirmBtn').onclick = async ()=>{
         <div class="hist-msg ${isUser?'user':'assistant'}">
           ${isUser?'':`<img src="/Resource/image/Coach_icon/coach_icon_1.png" class="hist-avatar">`}
           <div>
-            <div class="hist-bubble">${escapeHtml(r.content)}</div>
-            <div class="hist-time">${timeStr}</div>
+            <div class="hist-bubble">${escapeHtml(r.content)}
+            <div class="hist-time">${timeStr}</div></div>
           </div>
         </div>`;
       box.insertAdjacentHTML('beforeend',bubble);
