@@ -329,16 +329,6 @@
       margin-top:4px; text-align:right;
     }
 
-    /* ▼ 追加 –– 既存の .hist-time の後に書けば OK */
-    .hist-msg.assistant .hist-time{
-      align-self:flex-end;   /* ラッパー内で右寄せ                */
-      width:100%;            /* バブルと同じ横幅を占有させる       */
-      text-align:right;      /* 文字を右端に揃える                */
-      margin-top:4px;
-      font-size:.7rem;
-      color:var(--c-txt-sec);
-    }
-
     .hist-msg.assistant .hist-bubble{
       max-width: calc(100% - 2.5rem);   /* 2.5rem ≒ 40px ≒ 全角3文字弱 */
     }
@@ -368,8 +358,12 @@
     /* ❹ ここが今回のキー！  
       時刻だけ右下に寄る（親は flex-start でも OK） */
     .hist-msg.assistant .hist-time{
-      align-self:flex-end;      /* 自分だけ右端へ */
+      align-self:flex-end;   /* バブル右下へ */
+      width:max-content;     /* 文字ぶんだけ。行全体を押し広げない */
       text-align:right;
+      font-size:.7rem;
+      color:var(--c-txt-sec);
+      margin-top:4px;
     }
 
   </style>
