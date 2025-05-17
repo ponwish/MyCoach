@@ -433,16 +433,32 @@
   async function loadCoachList() {
     const res = await fetch(`${API_BASE_URL}/coaches`);
     const coaches = await res.json();
-    const select  = document.getElementById('coachSelect');
-    const filter  = document.getElementById('historyFilterSelect');
-    coaches.forEach(c=>{
+
+    const select = document.getElementById('coachSelect');
+    const filter = document.getElementById('historyFilterSelect');
+
+    // ✅ 初期化：前の option をクリア
+    select.innerHTML = '<option value="">-- 選択してください --</option>';
+    filter.innerHTML = '<option value="">―― 全コーチ ――</option>';
+
+    // ✅ code_id で重複除去（必要であれば id や name に変更可）
+    const seen = new Set();
+    const uniqueCoaches = coaches.filter(c => {
+      const key = c.code_id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // ✅ option 追加
+    uniqueCoaches.forEach(c => {
       const txt = `${c.name || '(名称未設定)'}（${c.code_id}）`;
-      const opt1=new Option(txt, c.id);
-      const opt2=new Option(txt, c.id);
-      select.add(opt1); filter.add(opt2);
+      const opt1 = new Option(txt, c.id);
+      const opt2 = new Option(txt, c.id);
+      select.add(opt1);
+      filter.add(opt2);
     });
   }
-  window.addEventListener('DOMContentLoaded', loadCoachList);
 
   /* ---------------- コーチ確定 ---------------- */
   function confirmCoach(){
