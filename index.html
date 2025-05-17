@@ -756,9 +756,6 @@
     const coaches = await res.json();
     const listEl  = document.getElementById('coachList');
     listEl.innerHTML = '';                      // 初期化
-    /* ② 履歴フィルタもクリーンアップ */
-    const filterSel = document.getElementById('historyFilterSelect');
-    filterSel.innerHTML = '<option value="">―― 全コーチ ――</option>';
 
     coaches.forEach(c=>{
       // アイコンが無い場合はイニシャルを出す
@@ -777,11 +774,6 @@
             ${c.availability_status?'受付中':'停止中'}
           </div>
         </div>`);
-      /* --- history filter --- */
-      const opt   = document.createElement('option');
-      opt.value   = c.id;
-      opt.textContent = `${c.name||'(名称未設定)'}（${c.code_id||''}）`;
-      filterSel.appendChild(opt);
     });
   }
 
