@@ -96,18 +96,85 @@
     .card .btn-outline-success{border:2px solid #64d9b9;background:transparent;color:#64d9b9}
 
     /* ========= 6. チャットエリア ========= */
-    .chat-container,.chat-history-container{
-      max-height:min(48vh,540px);overflow-y:auto;padding:8px 6px;margin-bottom:8px
+    .chat-container,
+    .chat-history-container{
+      max-height: min(48vh, 540px);
+      overflow-y: auto;
+      padding: 8px 6px;
+      margin-bottom: 12px;
+      scroll-behavior: smooth;                /* ← 追加でスクロールを滑らかに */
     }
-    .chat-message{display:flex;margin:10px 0}
-    .chat-icon{width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:8px}
-    .chat-bubble-container{max-width:75%}
+
+    .chat-message{
+      display: flex;
+      margin: 10px 0;
+    }
+
+    .chat-message.user{ justify-content: flex-end; }
+
+    .chat-icon{
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 8px;
+      box-shadow: var(--sh-in);
+    }
+
+    /* ===== バブル ===== */
+    .chat-bubble-container{ max-width: 75%; }
+
     .chat-bubble{
-      background:#fff;padding:12px 16px;border-radius:18px;line-height:1.55;box-shadow:var(--sh-1)
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.55;
+      box-shadow: var(--sh-1);
+      word-break: break-word;
+      background: #ffffff;                    /* AI デフォルト */
     }
-    .chat-message.user{justify-content:flex-end}
-    .chat-message.user .chat-bubble{background:var(--c-accent2)}
-    .chat-timestamp{font-size:.75rem;color:var(--c-txt-sec);margin-top:4px;text-align:right}
+
+    .chat-message.user .chat-bubble{
+      background: var(--c-accent2);           /* ユーザー用パステル色 */
+      box-shadow: none;
+    }
+
+    .chat-timestamp{
+      font-size: .75rem;
+      color: var(--c-txt-sec);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    /* ===== 入力エリア Glass 仕上げ ===== */
+    .input-group{
+      background: var(--c-card-gl);
+      border: 1px solid var(--c-card-br);
+      backdrop-filter: blur(14px);
+      border-radius: 2rem;
+      padding: 6px 8px;
+      box-shadow: var(--sh-1);
+    }
+
+    .input-group textarea{
+      resize: none;
+      border: none;
+      background: transparent;
+      outline: none;
+    }
+
+    #sendButton{
+      border: none;
+      background: var(--c-accent1);
+      color: #fff;
+      border-radius: 50%;
+      width: 42px; height: 42px;
+      display: flex;
+      align-items: center; justify-content: center;
+      transition: transform .2s;
+    }
+
+    #sendButton:hover{ transform: scale(1.08); }
+    #sendButton:active{ transform: scale(.94); }
+
 
     /* ========= 7. 汎用ユーティリティ ========= */
     .hidden{display:none!important}
@@ -197,7 +264,14 @@
     <div id="chat" class="chat-container"></div>
     <div class="input-group mt-3">
       <textarea id="talkInput" class="form-control" rows="2" placeholder="悩みや質問を入力してください（Shift+Enterで改行）"></textarea>
-      <button id="sendButton" class="btn btn-primary" onclick="sendTalk()">送信</button>
+      <button id="sendButton" onclick="sendTalk()">
+      <!-- simple plane icon (stroke inherits currentColor) -->
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M3 12L21 3L14 21L12 13L3 12Z" stroke="currentColor"
+              stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+</button>
+
     </div>
   </div>
 
