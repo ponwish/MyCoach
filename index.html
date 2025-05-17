@@ -23,7 +23,11 @@
     }
 
     /* ========= 1. ベース ========= */
-    html,body{height:100%;margin:0}
+    html,body{
+      min-height:100%;   /* 100 % “以上” に伸びるように */
+      height:auto;       /* 固定高さを解除 */
+      margin:0;
+    }
     body{
       padding-top: var(--header-h);
       background:var(--c-bg-grad);background-attachment:fixed;
@@ -56,7 +60,10 @@
     #menu li:hover{background:rgba(255,255,255,.35)}
 
     /* ========= 3. HERO ========= */
-    #hero{padding-top:108px;text-align:center}
+    #hero{
+      margin-top:24px;          /* ヘッダー分は body の padding-top で確保済みなので軽めに */
+      text-align:center;
+    }
     #hero img{
       width:190px;height:190px;border-radius:50%;object-fit:cover;
       box-shadow:var(--sh-1),var(--sh-in);
