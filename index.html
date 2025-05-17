@@ -322,12 +322,12 @@
     .hist-msg.user .hist-bubble{
       background:var(--c-accent2);
     }
-
     .hist-time{
-    display:block;          /* 幅をバブルに合わせる */
-    width: max-content;     /* テキストぶんだけ */
-    margin-top:4px;
-  }
+      font-size:.7rem; color:var(--c-txt-sec);
+      display:block;          /* 幅をバブルに合わせる */
+      width: max-content;     /* テキストぶんだけ */
+      margin-top:4px; text-align:right;
+    }
 
     .hist-msg.assistant .hist-bubble{
       max-width: calc(100% - 2.5rem);   /* 2.5rem ≒ 40px ≒ 全角3文字弱 */
