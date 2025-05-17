@@ -295,6 +295,11 @@
       align-items:flex-start;
     }
     .hist-msg.user { flex-direction: row-reverse; } 
+    .hist-msg.user .hist-bubble{
+      background:var(--c-accent2);
+      margin-left:0; 
+    }
+    .hist-msg.user .hist-time   { text-align: right; } /* 時刻も自然に左寄せ */
     .hist-avatar{
       flex:0 0 32px; height:32px; border-radius:50%;
       object-fit:cover; box-shadow:var(--sh-in);
@@ -310,7 +315,7 @@
     }
     .hist-time{
       font-size:.7rem; color:var(--c-txt-sec);
-      margin-top:4px; text-align:right;
+      margin-top:4px; text-align:left;
     }
 
   </style>
