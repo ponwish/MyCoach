@@ -291,13 +291,18 @@
 
     /* ---- 1 つのメッセージ ---- */
     .hist-msg{
-      display:flex; gap:10px; margin:12px 0;
-      align-items:flex-start;
+      display: flex;
+      gap: 10px;
+      margin: 12px 0;
+      align-items: flex-end;       /* 時刻の下端をバブルに合わせる */
     }
-    .hist-msg.user { flex-direction: row-reverse; } 
+
+    /* ユーザ行は右端に寄せる */
+    .hist-msg.user{
+      justify-content: flex-end;   /* ★ row-reverse は不要  */
+    }
     .hist-msg.user .hist-bubble{
-      background:var(--c-accent2);
-      margin-left:0; 
+      background: #ffd7e0;
     }
     .hist-msg.user .hist-time   { text-align: left; } /* 時刻も自然に左寄せ */
     .hist-avatar{
@@ -305,10 +310,14 @@
       object-fit:cover; box-shadow:var(--sh-in);
     }
     .hist-bubble{
-      max-width:70%; padding:12px 16px;
-      border-radius:18px; box-shadow:var(--sh-1);
-      background:#fff; word-break:break-word;
-      font-size:.92rem; line-height:1.55;
+      display: inline-block;       /* 自然に横へ広がる */
+      max-width: 80vw;             /* 画面幅の 80 % を上限に */
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.55;
+      box-shadow: var(--sh-1);
+      word-wrap: break-word;       /* 長い単語のみ折り返し */
+      background: #ffffff;         /* コーチ側（既定） */
     }
     .hist-msg.user .hist-bubble{
       background:var(--c-accent2);
@@ -933,8 +942,8 @@ document.getElementById('coachConfirmBtn').onclick = async ()=>{
         <div class="hist-msg ${isUser?'user':'assistant'}">
           ${isUser?'':`<img src="/Resource/image/Coach_icon/coach_icon_1.png" class="hist-avatar">`}
           <div>
-            <div class="hist-bubble">${escapeHtml(r.content)}
-            <div class="hist-time">${timeStr}</div></div>
+            <div class="hist-bubble">${escapeHtml(r.content)}</div>
+            <div class="hist-time">${timeStr}</div>
           </div>
         </div>`;
       box.insertAdjacentHTML('beforeend',bubble);
