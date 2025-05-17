@@ -295,10 +295,7 @@
       align-items:flex-start;
     }
     .hist-msg.user { flex-direction: row-reverse; } 
-    .hist-msg.user .hist-bubble{
-      background:var(--c-accent2);
-      margin-left:0; 
-    }
+    .hist-msg.user .hist-bubble { margin-left: 0; }   /* gap が逆向きになるためリセット */
     .hist-msg.user .hist-time   { text-align: left; } /* 時刻も自然に左寄せ */
     .hist-avatar{
       flex:0 0 32px; height:32px; border-radius:50%;
@@ -315,9 +312,9 @@
     }
     .hist-time{
       font-size:.7rem; color:var(--c-txt-sec);
-      margin-top:4px; text-align:left;
+      margin-top:4px; text-align:right;
     }
-    .hist-msg.user .hist-time{ text-align:right; } 
+
   </style>
 </head>
 
