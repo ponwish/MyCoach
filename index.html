@@ -205,69 +205,51 @@
 
   /* =========== 初期ログイン判定 =========== */
   document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      // --- ① Supabase セッション確認 ---
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (!session) {
-      // ② LINE がログインしていれば LIFF フローへ
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        lineId = profile.userId;
-        const r = await fetch(`${API_BASE_URL}/user/liff_login`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ lineId })
-        });
-        if (r.ok) {
-          const { userId } = await r.json();
-          localStorage.setItem('userId', userId);
-          finalizeLogin();
-          return;
-        }
-      }
-      // ③ ローカルに userId があればオフライン前提で続行
-      if (localStorage.getItem('userId')) { finalizeLogin(); return; }
-      // ④ どれも無ければログイン画面へ
-      location.replace('/static/user_login.html');
+  try {
+    // ① Supabaseセッションチェック（Googleログイン用）
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      userId = session.user.id;
+      localStorage.setItem('userId', userId);
+      finalizeLogin();
+      return;
     }
 
-      if (session?.user) {
-        userId = session.user.id;
-        localStorage.setItem('userId', userId);  // ✅ 忘れず保存
+    // ② LINEログインチェック
+    await liff.init({ liffId: LIFF_ID });
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      const lineId = profile.userId;
+      const r = await fetch(`${API_BASE_URL}/user/liff_login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lineId })
+      });
+      const j = await r.json();
+      if (r.ok && j.userId) {
+        userId = j.userId;
+        localStorage.setItem('userId', userId);
+        localStorage.setItem('lineId', lineId);
         finalizeLogin();
         return;
       }
-
-      // --- ② LINE LIFF チェック ---
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        lineId = profile.userId;
-
-        const r = await fetch(`${API_BASE_URL}/user/liff_login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lineId })
-        });
-        const j = await r.json();
-        if (r.ok) {
-          userId = j.userId;
-          localStorage.setItem('lineId', lineId);
-          localStorage.setItem('userId', userId);
-          finalizeLogin();
-          return;
-        }
-      }
-
-      // --- ③ 両方失敗：ログイン画面へ遷移 ---
-      location.replace('/static/user_login.html');
-
-    } catch (e) {
-      console.error('初期化エラー', e);
-      alert('ログイン処理に失敗しました。再読み込みしてください。');
     }
-  });
 
+    // ③ 最後の砦：localStorage に userId があれば続行（オフライン対応や念のため）
+    if (localStorage.getItem('userId')) {
+      userId = localStorage.getItem('userId');
+      finalizeLogin();
+      return;
+    }
+
+    // ④ どれも失敗 → ログイン画面に戻す
+    location.replace('/static/user_login.html');
+
+  } catch (e) {
+    console.error('初期化エラー', e);
+    alert('ログイン処理に失敗しました。再読み込みしてください。');
+  }
+});
 
   /* =========== ログイン完了後 UI 初期化 =========== */
   function finalizeLogin(){
