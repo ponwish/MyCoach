@@ -2,87 +2,127 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>AIコーチング Home</title>
+  <title>MyCoach – AIコーチング Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- External libs -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Jost:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- ===== Global Styles ===== -->
   <style>
-    /* ===== ベース ===== */
-    body{margin:0;padding:0;background:linear-gradient(135deg,#e0f7fa,#e8f4fd);font-family:'Segoe UI',sans-serif;}
-    header{position:fixed;top:0;left:0;right:0;height:60px;background:linear-gradient(90deg,#4facfe,#00f2fe);
-      display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:1000;}
-    header h1{margin:0;font-size:1.25rem;color:#fff;cursor:pointer;}
-    #hamburger{font-size:1.5rem;background:none;border:none;color:#fff;cursor:pointer;}
-    #menu{position:absolute;top:60px;right:20px;background:#fff;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,.1);display:none;z-index:999;}
-    #menu ul{list-style:none;margin:0;padding:0;}
-    #menu li{padding:12px 20px;cursor:pointer;transition:background .2s;}
-    #menu li:hover{background:#f1f1f1;}
+    :root{
+      --glass-bg: rgba(255,255,255,0.55);
+      --glass-border: rgba(255,255,255,0.8);
+      --brand-grad: linear-gradient(135deg,#ffecd2 0%,#fcb69f 100%);
+      --brand-grad-2: linear-gradient(135deg,#fad0c4 0%,#ffd1ff 100%);
+      --brand-grad-3: linear-gradient(135deg,#a1c4fd 0%,#c2e9fb 100%);
+      --brand-grad-4: linear-gradient(135deg,#d4fc79 0%,#96e6a1 100%);
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+    html,body{height:100%;margin:0;font-family:'Jost','Noto Sans JP',sans-serif;}
+    body{
+      background: var(--brand-grad);
+      background-attachment: fixed;
+      overflow-x:hidden;
+    }
+    /* ===== header ===== */
+    header{
+      position:fixed;top:0;left:0;right:0;height:64px;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 24px;z-index:1000;
+      backdrop-filter:blur(12px);
+    }
+    header h1{margin:0;font-size:1.5rem;font-weight:600;color:#444;letter-spacing:.5px;cursor:pointer;}
+    #hamburger{font-size:1.8rem;background:none;border:none;color:#444;cursor:pointer;}
+    #menu{position:absolute;top:64px;right:24px;background:var(--glass-bg);backdrop-filter:blur(10px);
+      border:1px solid var(--glass-border);border-radius:16px;box-shadow:var(--shadow);display:none;z-index:999;}
+    #menu ul{list-style:none;margin:0;padding:8px 0;}
+    #menu li{padding:10px 24px;cursor:pointer;transition:background .2s;font-weight:500;letter-spacing:.4px;}
+    #menu li:hover{background:rgba(255,255,255,.3);}  
 
-    main{padding-top:80px;display:flex;justify-content:center;flex-wrap:wrap;}
-    .card{width:100%;max-width:420px;margin:20px;padding:24px;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.05);}
-    .btn{margin-top:16px;border-radius:30px;padding:12px;font-weight:600;}
-    .btn-primary{background:#4facfe;border:none;color:#fff;}
-    .btn-primary:hover{background:#00f2fe;}
-    .btn-success{background:#43e97b;border:none;color:#fff;}
-    .btn-success:hover{background:#38d172;}
+    /* ===== HERO ===== */
+    #hero{
+      margin-top:96px;
+      text-align:center;
+    }
+    #hero img{width:180px;height:180px;border-radius:50%;object-fit:cover;box-shadow:var(--shadow);}  
+    #hero h2{font-weight:600;font-size:1.6rem;margin-top:24px;color:#333;}
+    #hero p{color:#555;font-size:.95rem;max-width:320px;margin:12px auto 0;line-height:1.6;}
 
-    /* ===== チャット関連 ===== */
-    #historyList{max-height:500px;overflow-y:auto;padding:12px;}
-    .chat-message{display:flex;justify-content:flex-start;margin-bottom:14px;}
-    .chat-icon{width:36px;height:36px;border-radius:50%;border:2px solid #4facfe;background:#fff;object-fit:cover;}
-    .chat-message.user .chat-icon{display:none;}
-    .chat-message.user{justify-content:flex-end;}
-    .chat-bubble-container{display:flex;flex-direction:column;align-items:flex-start;max-width:80%;}
-    .chat-message.user .chat-bubble-container{align-items:flex-end;}
-    .chat-bubble{padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.5;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.06);}
-    .chat-message.user .chat-bubble{background:#dcf8c6;border-bottom-right-radius:0;}
-    .chat-message.assistant .chat-bubble{background:#f1f0f0;border-bottom-left-radius:0;}
-    .chat-timestamp{font-size:11px;color:#999;margin-top:4px;text-align:right;}
-    #suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px;}
-    #suggestions .btn-light{background:#fff;border:1px solid #ddd;border-radius:20px;padding:6px 12px;font-size:.85rem;}
-    .chat-container{max-height:500px;overflow-y:auto;padding:10px;}
+    /* ===== Glass Cards ===== */
+    .glass-card{
+      width:100%;max-width:340px;margin:16px auto;padding:24px 20px;border-radius:24px;
+      background:var(--glass-bg);border:1px solid var(--glass-border);backdrop-filter:blur(12px);
+      box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;cursor:pointer;transition:transform .25s ease;}
+    .glass-card:hover{transform:translateY(-4px);}  
+    .glass-icon{
+      flex:0 0 48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+      color:#fff;font-size:1.35rem;}
+    .glass-title{font-size:1.05rem;font-weight:500;color:#222;letter-spacing:.3px;}
 
-    /* 入力 */
-    .input-group textarea{resize:none;}
-    #sendButton{min-width:70px;}
+    /* card specific grads */
+    .grad-1{background:var(--brand-grad-2);}  /* chat */
+    .grad-2{background:var(--brand-grad-3);}  /* coach */
+    .grad-3{background:var(--brand-grad);}    /* history */
+    .grad-4{background:var(--brand-grad-4);}  /* goal */
 
-    /* GPT dots */
-    .typing::after{content:'.';animation:dots 1s steps(3,end) infinite;}
-    @keyframes dots{0%{content:'';}33%{content:'.';}66%{content:'..';}100%{content:'...';}}
+    /* ========= hidden app screens keep their existing IDs ========= */
+    main > section{display:none;}
+    /* 最下部に追加：HERO / カードを隠すため */
+    #hero.hidden,
+    #card-stack.hidden{display:none;}
+
   </style>
 </head>
 
 <body>
-<!-- ===== ヘッダ ===== -->
-<header id="mainHeader">
-  <h1 onclick="navigate('home')">MyCoach</h1>
-  <button id="hamburger">☰</button>
-</header>
+  <!-- ===== HEADER ===== -->
+  <header>
+    <h1 onclick="navigate('home')">MyCoach</h1>
+    <button id="hamburger">☰</button>
+    <!-- pop menu -->
+    <div id="menu">
+      <ul>
+        <li onclick="navigate('home')">ホーム</li>
+        <li onclick="navigate('chat')">トーク</li>
+        <li onclick="navigate('coach')">担当変更</li>
+        <li onclick="navigate('history')">履歴</li>
+        <li onclick="navigate('goal-edit')">目標変更</li>
+        <li onclick="navigate('link')">アカウント連携</li>
+        <li onclick="logout()">ログアウト</li>
+      </ul>
+    </div>
+  </header>
+  <!-- ===== HERO ===== -->
+  <section id="hero">
+    <img src="/resource/image/hero_coach_chat.svg" alt="Let’s get better together">
+    <h2>一緒に、理想へ。</h2>
+    <p>あなた専属の AI コーチと対話しながら、ゴールへの最短ルートをデザインしましょう。</p>
+  </section>
 
-<!-- ハンバーガーメニュー -->
-<div id="menu">
-  <ul>
-    <li onclick="navigate('home')">ホーム</li>
-    <li onclick="navigate('chat')">トーク</li>
-    <li onclick="navigate('coach')">担当変更</li>
-    <li onclick="navigate('history')">履歴</li>
-    <li onclick="navigate('goal-edit')">目標変更</li>
-    <li onclick="navigate('link')">アカウント連携</li> <!-- ✅ 追加 -->
-    <li onclick="logout()">ログアウト</li>
-  </ul>
-</div>
+  <!-- ===== FUNCTION CARDS ===== -->
+  <section id="card-stack">
+    <div class="glass-card" onclick="navigate('chat')">
+      <div class="glass-icon grad-1">💬</div>
+      <span class="glass-title">チャットをはじめる</span>
+    </div>
+    <div class="glass-card" onclick="navigate('coach')">
+      <div class="glass-icon grad-2">👨‍🏫</div>
+      <span class="glass-title">担当コーチを変更</span>
+    </div>
+    <div class="glass-card" onclick="navigate('history')">
+      <div class="glass-icon grad-3">📜</div>
+      <span class="glass-title">トーク履歴をみる</span>
+    </div>
+    <div class="glass-card" onclick="navigate('goal-edit')">
+      <div class="glass-icon grad-4">🎯</div>
+      <span class="glass-title">目標をアップデート</span>
+    </div>
+  </section>
 
 <!-- ===== メイン ===== -->
 <main>
-  <!-- ホーム -->
-  <div id="home-area" class="card">
-    <h4 class="mb-4 text-center">AIコーチング メニュー</h4>
-    <button class="btn btn-primary w-100 mb-3" onclick="navigate('chat')">💬 チャットをはじめる</button>
-    <button class="btn btn-success w-100 mb-3" onclick="navigate('coach')">👨‍🏫 コーチを変更</button>
-    <button class="btn btn-secondary w-100"      onclick="navigate('history')">📜 チャット履歴を見る</button>
-    <button class="btn btn-outline-secondary w-100" onclick="navigate('goal-edit')">🎯 目標を変更</button>
-  </div>
   <!-- アカウント連携 -->
   <div id="link-area" class="card" style="display:none;">
     <h4 class="mb-3">アカウント連携</h4>
@@ -376,9 +416,15 @@
   function hideAll(){
     ['home-area','goal-area','goal-edit-area','chat-area','coach-select-area','history-area','link-area']
       .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+      document.getElementById('hero').classList.add('hidden');
+      document.getElementById('card-stack').classList.add('hidden'); 
   }
   function showSection(s){
     hideAll();
+    if(name==='home'){
+      document.getElementById('hero').classList.remove('hidden');
+      document.getElementById('card-stack').classList.remove('hidden');
+    }
     const map={home:'home-area',chat:'chat-area',coach:'coach-select-area',
               history:'history-area','goal-edit':'goal-edit-area',goal:'goal-area',link:'link-area'};
     document.getElementById(map[s]).style.display='block';

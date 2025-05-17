@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffecd2"/>
+      <stop offset="100%" stop-color="#fcb69f"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a1c4fd"/>
+      <stop offset="100%" stop-color="#c2e9fb"/>
+    </linearGradient>
+  </defs>
+
+  <!-- chat bubble -->
+  <rect x="40" y="80" rx="24" ry="24" width="432" height="240" fill="url(#grad1)"/>
+  <polygon points="120,320 100,380 180,340" fill="url(#grad1)"/>
+
+  <!-- coach avatar circle -->
+  <circle cx="256" cy="196" r="66" fill="white" stroke="#ffffffaa" stroke-width="4"/>
+  <circle cx="256" cy="186" r="54" fill="url(#grad2)"/>
+
+  <!-- smile -->
+  <circle cx="236" cy="176" r="6" fill="white"/>
+  <circle cx="276" cy="176" r="6" fill="white"/>
+  <path d="M230 198 Q256 218 282 198" stroke="white" stroke-width="5" stroke-linecap="round" fill="transparent"/>
+
+  <!-- subtle sparkles -->
+  <path d="M90 70 L94 80 L104 84 L94 88 L90 98 L86 88 L76 84 L86 80Z" fill="#ffffff88"/>
+  <path d="M420 60 L424 68 L432 72 L424 76 L420 84 L416 76 L408 72 L416 68Z" fill="#ffffff88"/>
+  <path d="M460 220 L464 228 L472 232 L464 236 L460 244 L456 236 L448 232 L456 228Z" fill="#ffffff66"/>
+</svg>
