@@ -232,7 +232,43 @@
       display: flex;
       align-items: center;
     }
+    /* === Coach Select ======================================= */
+    #coach-select-area .coach-list{
+      max-height:min(48vh,520px);           /* スマホでもはみ出さない */
+      overflow-y:auto; padding:2px;
+    }
 
+    .coach-item{
+      display:flex; align-items:center; gap:14px;
+      padding:14px 18px; margin:12px 0;
+      border-radius:20px;
+      background:var(--c-card-gl);
+      backdrop-filter:blur(14px);
+      border:1px solid var(--c-card-br);
+      box-shadow:var(--sh-1);
+      cursor:pointer; transition:transform .2s,box-shadow .2s;
+    }
+    .coach-item:hover{ transform:translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,.12); }
+
+    .coach-item.selected{                           /* ← クリックで付与 */
+      border:2px solid var(--c-accent3);
+      box-shadow:0 0 0 4px rgba(161,196,253,.35);
+    }
+
+    .coach-avatar{
+      flex:0 0 46px; height:46px; border-radius:50%;
+      background:var(--c-accent3);                  /* 画像が無い場合の色 */
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:700; font-size:1.1rem;
+      object-fit:cover;
+    }
+
+    .coach-info{flex:1}
+    .coach-name{font-weight:600}
+    .coach-code{font-size:.8rem; color:var(--c-txt-sec)}
+    .coach-status{font-size:.8rem; font-weight:600}
+    .coach-status.on {color:#2e7d32}
+    .coach-status.off{color:#d32f2f}
   </style>
 </head>
 
@@ -332,9 +368,14 @@
 
   <!-- コーチ選択 -->
   <div id="coach-select-area" class="card" style="display:none;">
-    <h4>担当コーチを選択</h4>
-    <select id="coachSelect"><option value="">-- 選択してください --</option></select>
-    <button class="btn btn-success" onclick="confirmCoach()">確定</button>
+    <h4 class="text-center mb-3">担当コーチを選択</h4>
+
+    <!-- ── コーチ一覧（JS で動的生成） -->
+    <div id="coachList" class="coach-list"></div>
+
+    <button id="coachConfirmBtn"
+            class="btn btn-success w-100 mt-2"
+            disabled>このコーチに決定</button>
   </div>
 
   <!-- 履歴 -->
@@ -656,51 +697,62 @@
   }
 
   /* ---------- コーチ一覧をロード ---------- */
-  async function loadCoachList() {
+  async function loadCoachList(){
     const res = await fetch(`${API_BASE_URL}/coaches`);
     const coaches = await res.json();
+    const listEl  = document.getElementById('coachList');
+    listEl.innerHTML = '';                      // 初期化
 
-    const select = document.getElementById('coachSelect');
-    const filter = document.getElementById('historyFilterSelect');
+    coaches.forEach(c=>{
+      // アイコンが無い場合はイニシャルを出す
+      const initial = (c.name||'')[0]||'C';
 
-    // ✅ 初期化：前の option をクリア
-    select.innerHTML = '<option value="">-- 選択してください --</option>';
-    filter.innerHTML = '<option value="">―― 全コーチ ――</option>';
-
-    // ✅ code_id で重複除去（必要であれば id や name に変更可）
-    const seen = new Set();
-    const uniqueCoaches = coaches.filter(c => {
-      const key = c.code_id;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    // ✅ option 追加
-    uniqueCoaches.forEach(c => {
-      const txt = `${c.name || '(名称未設定)'}（${c.code_id}）`;
-      const opt1 = new Option(txt, c.id);
-      const opt2 = new Option(txt, c.id);
-      select.add(opt1);
-      filter.add(opt2);
+      listEl.insertAdjacentHTML('beforeend',`
+        <div class="coach-item" data-id="${c.id}"
+            onclick="selectCoach(this)">
+          <img class="coach-avatar" src="${c.icon_url||''}"
+              onerror="this.outerHTML='<div class=&quot;coach-avatar&quot;>${initial}</div>'">
+          <div class="coach-info">
+            <div class="coach-name">${c.name||'(名称未設定)'}</div>
+            <div class="coach-code">${c.code_id||''}</div>
+          </div>
+          <div class="coach-status ${c.availability_status?'on':'off'}">
+            ${c.availability_status?'受付中':'停止中'}
+          </div>
+        </div>`);
     });
   }
+
 
   /* ---------------- コーチ確定 ---------------- */
-  function confirmCoach(){
-    const sel   = document.getElementById('coachSelect');
-    const coachId = sel.value;
-    if(!coachId)return alert('選択してください');
-    fetch(`${API_BASE_URL}/user/assign_coach`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({userId,coachId})
-    }).then(r=>{
-      if(!r.ok) return alert('更新失敗');
-      /* ★ 即時反映：選択 option のラベルをそのまま表示 */
-      document.getElementById('coachNameText').textContent = sel.options[sel.selectedIndex].text.replace(/（.*?）/,'');
-      showSection('chat');
-    });
-  }
+let selectedCoachId = '';
+
+function selectCoach(el){
+  // ビジュアル選択状態の切替
+  document.querySelectorAll('.coach-item.selected')
+          .forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');
+
+  selectedCoachId = el.dataset.id;
+  document.getElementById('coachConfirmBtn').disabled = false;
+}
+
+document.getElementById('coachConfirmBtn').onclick = async ()=>{
+  if(!selectedCoachId) return;
+  const r = await fetch(`${API_BASE_URL}/user/assign_coach`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({userId,coachId:selectedCoachId})
+  });
+  if(r.ok){
+    const name = document
+        .querySelector(`.coach-item.selected .coach-name`).textContent;
+    document.getElementById('coachNameText').textContent = name;
+    alert('担当コーチを更新しました');
+    showSection('chat');
+  }else alert('更新失敗');
+};
+
 
   /* ---------------- サジェスチョン ---------------- */
   let suggestionsShown=false;
