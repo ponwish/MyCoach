@@ -33,10 +33,6 @@
       background:var(--c-bg-grad);background-attachment:fixed;
       color:var(--c-txt-prim);-webkit-font-smoothing:antialiased;
       overflow-x:hidden;
-      position:fixed;
-      inset:0 0 auto 0;
-      height:var(--header-h);
-      z-index:1000;
     }
 
     /* ========= 2. ヘッダ ========= */
@@ -46,6 +42,10 @@
       padding:0 24px;backdrop-filter:blur(12px);
     }
     header h1{margin:0;font-size:1.4rem;font-weight:600;cursor:pointer}
+    main{
+      padding-bottom:80px;   /* 最下部にも余白を足しておくと
+                                スクロールでカードの影が切れない */
+    }
     #hamburger{font-size:1.8rem;background:none;border:none;cursor:pointer}
     #menu{
       position:absolute;top:var(--header-h);right:24px;min-width:160px;display:none;
