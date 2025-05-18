@@ -371,7 +371,7 @@
 
 <body>
 <!-- ===== ヘッダ ===== -->
-<header id="mainHeader">
+<header id="mainHeader" style="display:none">
   <h1 onclick="navigate('home')">MyCoach</h1>
   <button id="hamburger">☰</button>
 </header>
@@ -754,7 +754,6 @@
   }
 
   function navigate(s){document.getElementById('menu').style.display='none';showSection(s);}
-  showSection('home');
 
   /* ---------------- ログアウト ---------------- */
   function logout(){
