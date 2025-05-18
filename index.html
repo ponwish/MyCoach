@@ -232,6 +232,13 @@
       display: flex;
       align-items: center;
     }
+
+    #userProfileInfo div:hover {
+      background-color: rgba(255, 255, 255, 0.25);
+      border-radius: 12px;
+      transition: background-color 0.2s;
+    }
+
     /* === Coach Select ======================================= */
     #coach-select-area .coach-list{
       max-height:min(48vh,520px);           /* スマホでもはみ出さない */
@@ -445,8 +452,18 @@
   <!-- チャット -->
   <div id="chat-area" class="card" style="display:none;">
     <div id="userProfileInfo" class="mb-3 px-3 py-2 border rounded bg-light">
-      <div><strong>🎯</strong><span id="userGoalText">読み込み中...</span></div>
-      <div><strong>👨‍🏫</strong><span id="coachNameText" style="font-weight:600;">読み込み中...</span></div>
+      <!-- 目標：タップで目標編集へ -->
+      <div style="cursor:pointer" onclick="navigate('goal-edit')">
+        <strong>🎯</strong>
+        <span id="userGoalText">読み込み中...</span>
+      </div>
+
+      <!-- コーチ：タップでコーチ選択画面へ -->
+      <div style="cursor:pointer" onclick="navigate('coach')">
+        <strong>👨‍🏫</strong>
+        <span id="coachNameText" style="font-weight:600;">読み込み中...</span>
+      </div>
+
     </div>
     <div id="suggestions"></div>
     <div id="chat" class="chat-container"></div>
@@ -949,7 +966,7 @@ document.getElementById('coachConfirmBtn').onclick = async ()=>{
     if(d.coachId){
       const nameRes = await fetch(`${API_BASE_URL}/coach/profile?coachId=${d.coachId}`);
       const p = await nameRes.json();
-      document.getElementById('coachNameText').textContent = p.name || '(未設定)';
+      document.getElementById('coachNameText').textContent = p.name || '(未設定)'+ ' コーチ';
       document.getElementById('coachSelect').value = d.coachId;
     }
   }
