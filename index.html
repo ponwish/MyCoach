@@ -819,6 +819,9 @@
     const res = await fetch(`${API_BASE_URL}/coaches`);
     const coaches = await res.json();
     const listEl  = document.getElementById('coachList');
+    const currentRes = await fetch(`${API_BASE_URL}/user/coach?userId=${userId}`);
+    const currentCoach = await currentRes.json();
+    const currentCoachId = currentCoach.coachId;
     listEl.innerHTML = '';                      // 初期化
     /* ② 履歴フィルタもクリーンアップ */
     const filterSel = document.getElementById('historyFilterSelect');
@@ -829,12 +832,14 @@
       const initial = (c.name||'')[0]||'C';
 
       listEl.insertAdjacentHTML('beforeend',`
-        <div class="coach-item" data-id="${c.id}"
+        <div class="coach-item ${c.id === currentCoachId ? 'selected' : ''}" data-id="${c.id}"
             onclick="selectCoach(this)">
           <img class="coach-avatar" src="${c.icon_url||''}"
               onerror="this.outerHTML='<div class=&quot;coach-avatar&quot;>${initial}</div>'">
           <div class="coach-info">
-            <div class="coach-name">${c.name||'(名称未設定)'}</div>
+            <div class="coach-name">${c.name||'(名称未設定)'}
+              ${c.id === currentCoachId ? '<span class="badge bg-success ms-2">担当中</span>' : ''}
+            </div>
             <div class="coach-code">${c.code_id||''}</div>
           </div>
           <div class="coach-status ${c.availability_status?'on':'off'}">
